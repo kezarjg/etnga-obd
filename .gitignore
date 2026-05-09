@@ -1,0 +1,19 @@
+# Belt-and-suspenders: these directories should never exist in the
+# public tree, but if a stray copy lands here, don't let `git add -A`
+# leak them.
+captures/
+sessions/
+
+# Raw-capture and Techstream-recording file types
+*.log
+*.TSE
+*.tse
+
+# OS / editor / secrets
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
+.env
