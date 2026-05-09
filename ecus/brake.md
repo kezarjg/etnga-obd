@@ -119,7 +119,7 @@ These two work together: pedal stroke → Brake Booster generates servo pressure
 | **Regenerative Cooperation** | OFF | currently parked, no regen |
 | **FR Regenerative Request** | 0 Nm | torque the brake ECU is asking from regen |
 | **FR Regenerative Operation** | 0 Nm | torque actually delivered |
-| **Fade Status** | OFF | overheating brake fade flag (would be useful in towing/mountain driving for OVMS!) |
+| **Fade Status** | OFF | overheating brake fade flag (would be useful in towing/mountain driving) |
 
 The Brake/EPB ECU is the **regen-blending coordinator** — when the driver presses the brake pedal, this ECU decides how much torque to request from regen vs. how much hydraulic pressure to apply.
 
@@ -155,17 +155,6 @@ The Brake/EPB ECU is the **regen-blending coordinator** — when the driver pres
 #### Open-circuit diagnostic flags (all "Normal" at idle)
 
 Many "Open" flags for sensor health: M/C Pressure Sensor, Stroke, Yaw Rate, Steering, FR/FL/RR/RL Speed, Solenoid Power, Motor Power, A/C ECU Communication, Air Bag ECU Communication, HV Communication, Body ECU Communication, etc. All "Normal" — the ECU's diagnostic surface for sensor and bus health.
-
-### OVMS mappings (Brake/EPB)
-
-| OVMS metric | Source parameter | Status |
-|---|---|---|
-| `v.b.parkbrake` (or `v.e.parkbrake`) | RH/LH Actuator Status, Parking Brake SW | ⬜ DID isolation |
-| Custom `v.b.regen.active` | Regenerative Cooperation, Regenerative Request/Operation | ⬜ — useful for OVMS regen tracking |
-| Custom `v.b.fade` | Fade Status | ⬜ — would be valuable in towing / mountain driving |
-| Custom `v.b.brakehold` | Brake Hold Control Mode | ⬜ |
-| Custom: per-wheel speeds, lateral/longitudinal G, yaw | already in EV ECU; Brake ECU has higher-resolution Yaw Rate Sensor 1/2 | ⬜ |
-| Custom: TSS / VMC active | Request Acceleration from TSS / VMC | ⬜ — useful for "is the car driving itself" awareness |
 
 ## Brake Booster (`0x750/0x29`)
 
@@ -246,9 +235,9 @@ The Brake Booster has a capacitor for failsafe operation if the 12V battery fail
 | Gap Hold Chamber Pressure Sensor Open History | None |
 | Reservoir Warning SW | OFF |
 
-### OVMS mappings (Brake Booster)
+### Notable telemetry from the Brake Booster
 
-Most parameters are subsystem-specific and not OVMS-relevant. Notable exceptions:
+Most parameters are subsystem-specific and only useful for diagnostics. Notable exceptions for higher-level vehicle telemetry:
 
 | Metric | Source | Use |
 |---|---|---|

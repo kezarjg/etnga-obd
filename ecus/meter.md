@@ -70,21 +70,21 @@ Mapped via single-parameter isolation in Techstream Data List.
 | `0x12A1` | 1 byte | **Integrated value for Maintenance** | uint8 × 100 (miles, possibly km — depends on locale) | `0x1E` = 30 → 3000 mile (matches display). Direction TBD: counts up (miles since service) or down (miles to next). |
 | `0x1641` | 2 bytes | **HV/EV System Indicator** | TBD — at 0 % can't pin scale. Likely the dashboard power-flow gauge (regen-left / power-out-right). | `0x00 00` = 0 % at idle (car not in Ready mode). Needs drive-cycle capture to decode. |
 
-## OVMS mappings
+## Decoded signal summary
 
-| OVMS metric | DID | Encoding | Status |
+| Signal | DID | Encoding | Status |
 |---|---|---|---|
-| `v.b.12v.voltage` | `0x7C0` `0x1021` | uint8 × 0.1 V | ✅ Decoded |
-| `v.e.temp` | `0x7C0` `0x1141` byte 0 | (b - 80) / 2 = °C | ✅ Decoded (backup to HVAC `0x7C4` `0x1002`) |
-| `v.p.speed` | `0x7C0` `0x1041` | TBD | ⚠ Partial — needs drive cycle |
-| `v.e.serv.range` | `0x7C0` `0x12A1` | uint8 × 100 (mi) | ⚠ Direction TBD |
-| `v.b.power` (or similar) | `0x7C0` `0x1641` | TBD | ⚠ Needs Ready mode |
-| `v.b.range.est` (USER-STATED GAP) | **not exposed as a DID on this ECU** | — | ❌ Confirmed absent — must be derived in module or sniffed from broadcast |
+| 12V auxiliary battery voltage | `0x7C0` `0x1021` | uint8 × 0.1 V | Decoded |
+| Ambient temperature | `0x7C0` `0x1141` byte 0 | (b - 80) / 2 = °C | Decoded (backup to HVAC `0x7C4` `0x1002`) |
+| Vehicle speed | `0x7C0` `0x1041` | TBD | Partial — needs drive cycle |
+| Integrated value for Maintenance (service interval) | `0x7C0` `0x12A1` | uint8 × 100 (mi) | Direction TBD |
+| HV/EV System Indicator (dash power gauge) | `0x7C0` `0x1641` | TBD | Needs Ready mode |
+| Range estimate | **not exposed as a DID on this ECU** | — | Confirmed absent — must be derived externally or sniffed from broadcast |
 
 ## Open questions
 
 - **Vehicle Speed encoding** — mph vs km/h vs scaled? Capture during a drive cycle and read the same DID at known speeds (5/10/15 mph) to nail the multiplier.
-- **HV/EV System Indicator encoding and meaning** — dashboard power gauge at 0 % when parked. Needs Ready mode + light accelerator/brake to see the dynamic range. If int16 with negative for regen, it may map to `v.b.power` directly.
+- **HV/EV System Indicator encoding and meaning** — dashboard power gauge at 0 % when parked. Needs Ready mode + light accelerator/brake to see the dynamic range. If int16 with negative for regen, it may map to instantaneous battery power directly.
 - **Integrated for Maintenance direction** — counts up or down? Compare value before and after a known drive (or just compare across two sessions a week apart with miles in between).
 - **Range estimate** — confirmed not in this Data List. Next step: passively monitor the bus during a drive cycle and look for broadcast frames whose value tracks the displayed range estimate.
 - **Why does `0x7E2` own OBD-II Mode 01 PID `0xA6`?** That's the odometer; the cluster owns it via Toyota DID `0x0103` over at PSC (`0x750/0xE9`). On `0x7E2` it shows up as the standardized OBD-II Mode 01 PID. `0x7E2` is probably a virtual ECU that aggregates standardized OBD-II surface signals — worth a dedicated session.

@@ -6,7 +6,7 @@ share the same EV-dedicated platform and largely the same diagnostic surface,
 so findings here generally apply to all three. Variant-specific differences
 are called out where they're known.
 
-This is a reference for anyone building a vehicle integration (OVMS, ABRP,
+This is a reference for anyone building a vehicle integration (ABRP,
 EVNotify, custom dashboards) or doing their own RE. It documents the OBD-II
 diagnostic surface (UDS over ISO-TP) plus the small handful of broadcast CAN
 frames visible on the OBD-II bus.
@@ -70,8 +70,8 @@ Each decoded signal carries a confidence rating in its `ecus/<ecu>.md`
 front-matter:
 
 - **`high`** — formula confirmed by both a live bus exchange and an
-  independent reference (Techstream parameter, OBDb signal, ABRP integration,
-  community publication).
+  independent reference (Techstream parameter, OBDb signal, public ABRP
+  bZ4X/Solterra OBD config, community publication).
 - **`medium`** — formula confirmed by live bus exchange OR a strong
   reference, but not both.
 - **`low`** — single source, plausible but not cross-verified.

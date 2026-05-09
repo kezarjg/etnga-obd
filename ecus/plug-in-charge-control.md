@@ -11,7 +11,7 @@ sources:
   - 2026-05-04_0016_health-check
   - 2026-05-08_1955_ecu-mapping-marathon
   - 2026-05-08_2058_ev-battery-data-list  # cross-reference
-  - docs/references/abrp-bz4x-test.json   # user-authored ABRP prior art
+  - docs/references/abrp-bz4x-test.json   # public ABRP bZ4X/Solterra OBD config — prior art
 confidence: high                           # Techstream-confirmed 2026-05-08
 ---
 
@@ -62,7 +62,7 @@ This ECU bundles several functions a typical Toyota EV would split across multip
    - AC Charging Total Time (lifetime minutes)
    - Charging required time / elapsed time / state elapsed time
    - Target precharge voltage
-   - Charge Amount Upper Limit Setting (the `v.c.limit.soc` user setting)
+   - Charge Amount Upper Limit Setting (user-configurable charge target SOC)
    - 6A Charging Mode Switching History
 5. **Charge connector and lock**
    - Charging Lid switch / lamp / open-close state
@@ -85,7 +85,7 @@ This ECU bundles several functions a typical Toyota EV would split across multip
 
 This breadth confirms `0x745` = the integrated A33 ECU.
 
-## DIDs (high-confidence — from user's ABRP integration)
+## DIDs (high-confidence — from public ABRP bZ4X/Solterra OBD config)
 
 | DID | Meaning | Encoding | Notes |
 |---|---|---|---|
@@ -95,7 +95,7 @@ This breadth confirms `0x745` = the integrated A33 ECU.
 
 ## Notable Data List values from the 2026-05-08 snapshot (idle, Ready ON, not charging)
 
-| Parameter | Value | Significance for OVMS / preconditioning |
+| Parameter | Value | Significance for telemetry / preconditioning |
 |---|---|---|
 | **Hybrid/EV Battery Temperature when Charging Start** | **32 F (0 °C)** | Logged value from last charge — direct evidence of cold-weather DCFC happening on this car. Strong preconditioning argument. |
 | Charging History Information | "AC Charging Complete (Full Charge)" | Last-charge state is queryable as an enum |
@@ -104,7 +104,7 @@ This breadth confirms `0x745` = the integrated A33 ECU.
 | Hybrid/EV Battery SOC (DC Charger Display) | 95 % | The biased SOC presented to DCFC stations (vs EV Battery's 89 % "real" SOC) |
 | Hybrid/EV Battery SOC (Meter Display) | 95 % | What the dashboard cluster displays |
 | Hybrid/EV Battery Control Status on Thermal Keeping and Charging | "Unoperated" | Confirms there *is* a "Thermal Keep" feature in Toyota's logic; currently inactive. May be related to scheduled charge / pre-departure thermal prep. |
-| Charge Amount Upper Limit Setting | "Full" | This is the `v.c.limit.soc` Customize Parameter we wanted to find — exposed on this ECU. DID not yet pinned. |
+| Charge Amount Upper Limit Setting | "Full" | The user-configurable charge-target SOC Customize Parameter we wanted to find — exposed on this ECU. DID not yet pinned. |
 | HV/EV Battery Total Voltage | 392.0 V | Same as EV Battery's `0x1F9A` reading |
 | Charging Voltage for Hybrid/EV Battery | 0.0 V | Idle (not charging) |
 | Hybrid/EV Battery Charging Power | -0.94 kW | Negative = battery feeding aux loads at idle |
@@ -122,40 +122,40 @@ From `2026-05-04_0016_health-check` Toyota Health Check polled: `0x1C00` (suppor
 
 The 247-byte responses on `0x1D41-D44` likely correspond to charge-session log records or per-session history (the Data List has many "history" parameters like "Connector Unlock History during Charging", "AC Charging Input Minimum Voltage History", "Power Limit Operation History", etc.). These are good targets for a future direct DID dump.
 
-## OVMS mappings
+## Decoded signal summary
 
-| OVMS metric | DID / Source | Status |
+| Signal | DID / Source | Status |
 |---|---|---|
-| `v.b.soc` | `0x745` `0x1739` (or `0x747` `0x1F5B` for the unbiased view) | ✅ Decoded |
-| `v.c.charging` | `0x745` `0x10D1` (`A == 3`) | ✅ Decoded |
-| `v.c.type` (DC vs AC) | `0x745` `0x1668` (`A == 5` = DCFC) | ✅ Partial — only DCFC enum value identified |
-| `v.c.state` | `0x745` `0x10D1` enum (full mapping needed) | ⚠ Need to enumerate values |
-| `v.c.limit.soc` | TBD — readable on this ECU as "Charge Amount Upper Limit Setting" | ⬜ Isolate via Data List to find DID |
-| `v.c.voltage` | TBD — "Charging Voltage for Hybrid/EV Battery" Data List item | ⬜ Isolate to find DID |
-| `v.c.power` | TBD — "Hybrid/EV Battery Charging Power" Data List item | ⬜ Isolate |
-| `v.c.kwh` | TBD — derive from charge time + power, or look for "Charging Required Time" / "Charging Elapsed Time" related | ⬜ |
-| `v.c.efficiency` | TBD — derive from "Charger Input Power" vs "Charger Output Power" | ⬜ |
-| **Total AC charge count / time** | TBD — DIDs underlying the lifetime counters | ⬜ Useful for lifetime tracking |
-| **Last-charge logged temperatures** | TBD — "Battery Temperature when Charging Start" / "Max/Min during Charging" | ⬜ Strong signal for preconditioning trigger |
+| Pack SOC (charge-controller view) | `0x745` `0x1739` (or `0x747` `0x1F5B` for the unbiased view) | Decoded |
+| Charging-active flag | `0x745` `0x10D1` (`A == 3`) | Decoded |
+| Charge type (DC vs AC) | `0x745` `0x1668` (`A == 5` = DCFC) | Partial — only DCFC enum value identified |
+| Full charge-state enum | `0x745` `0x10D1` enum (full mapping needed) | Need to enumerate values |
+| Charge target SOC (user setting) | TBD — readable on this ECU as "Charge Amount Upper Limit Setting" | Isolate via Data List to find DID |
+| Charging voltage | TBD — "Charging Voltage for Hybrid/EV Battery" Data List item | Isolate to find DID |
+| Charging power | TBD — "Hybrid/EV Battery Charging Power" Data List item | Isolate |
+| Charging kWh delivered | TBD — derive from charge time + power, or look for "Charging Required Time" / "Charging Elapsed Time" related | Open |
+| Charge efficiency | TBD — derive from "Charger Input Power" vs "Charger Output Power" | Open |
+| Total AC charge count / time | TBD — DIDs underlying the lifetime counters | Useful for lifetime tracking |
+| Last-charge logged temperatures | TBD — "Battery Temperature when Charging Start" / "Max/Min during Charging" | Strong signal for preconditioning trigger |
 
-## Implications for OVMS preconditioning
+## Implications for preconditioning
 
-This ECU has the **logged record of cold-weather charging** (32 F start temp from last charge). For OVMS preconditioning logic, this means:
+This ECU has the **logged record of cold-weather charging** (32 F start temp from last charge). For preconditioning logic, this means:
 
-1. We can **track historic charging conditions** to know whether preconditioning is even worth the energy (if the user always plugs in warm, no need).
+1. Historic charging conditions can be **tracked** to know whether preconditioning is even worth the energy (if the user always plugs in warm, no need).
 2. **"Thermal Keep" parameters** (currently "Unoperated") suggest Toyota has *some* preconditioning infrastructure already in firmware — worth investigating whether triggering it via a known UDS command would be cleaner than driving the heater/pump tests directly. May be a routine ID we haven't found.
-3. The **biased "DC Charger Display SOC"** (95 % vs 89 % real) is what DCFC stations see for charging negotiation — important to understand for any future DCFC-related telemetry in OVMS.
+3. The **biased "DC Charger Display SOC"** (95 % vs 89 % real) is what DCFC stations see for charging negotiation — important to understand for any future DCFC-related telemetry.
 
 ## Open questions
 
-- **DID for `v.c.limit.soc`** — isolate "Charge Amount Upper Limit Setting" alone in the Data List to find its source DID. Then writable via `0x2E` WriteDataByIdentifier.
+- **DID for the charge-target-SOC user setting** — isolate "Charge Amount Upper Limit Setting" alone in the Data List to find its source DID. Then writable via `0x2E` WriteDataByIdentifier.
 - **DIDs for live charging V/I/P** — partially identified 2026-05-09; positions tentative — single-source isolation needed.
 - **`0x1D41-D44` 247-byte payloads** — likely charge-session history. Trigger known charge events and re-read to decode the structure.
 - **"Thermal Keep" routine** — is there a UDS routine ID that triggers Toyota's built-in preconditioning, parallel to `0x1124` Cooling? Search for `0x31 01 RR RR` patterns when initiating a scheduled charge or thermal prep. Could be cleaner than driving the heater/pump tests directly.
 
 ## Source DID layout — captured 2026-05-09 L2 plug-in session
 
-The 2026-05-09 charge-cycle capture (IG-OFF → L2 plug-in → AC charge initiation, 471 sec window) caught both `2C 01` defines on the OBC and the entire active-charging dialog. Authoritative table also at `docs/ovms-module-plan.md`:
+The 2026-05-09 charge-cycle capture (IG-OFF → L2 plug-in → AC charge initiation, 471 sec window) caught both `2C 01` defines on the OBC and the entire active-charging dialog. Authoritative table:
 
 ### F301 (40 sources, 135-byte response body)
 

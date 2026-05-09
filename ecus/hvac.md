@@ -175,32 +175,13 @@ Plus per-servo "Initialization History Count" (all 0 — never had to relearn po
 
 Resistance values around 10 kΩ at room temp are normal for NTC thermistors. Useful as "is the seat heater wired up" sanity checks.
 
-## OVMS mappings
-
-| OVMS metric | Source parameter | DID | Status |
-|---|---|---|---|
-| `v.e.cabintemp` | Room Temperature Sensor | `0x1001` | ✅ |
-| `v.e.temp` (ambient) | Ambient Temperature Sensor | `0x1002` | ✅ |
-| `v.e.cabinsetpoint` | Front Left/Right Set Temperature | `0x1036` | ✅ (single zone via ABRP formula; dual-zone needs separate read) |
-| `v.e.cabinfan` | Blower Level (1–7) | TBD | ⬜ — isolate to find DID |
-| `v.e.cabinintake` | Air Inlet Damper Position | TBD | ⬜ |
-| `v.e.cabinvent` | Front Air Outlet Damper Position | TBD | ⬜ |
-| `v.e.heating` (kW) | HV Electric Heater Consumption Electric Power | TBD | ⬜ — direct kW readout |
-| `v.e.cooling` (bool/kW) | Compressor Actual Speed > 0, or A/C Consumption Power | TBD | ⬜ |
-| `v.e.hvac` (active) | Compressor + Blower combined logic | TBD | ⬜ |
-| Custom: seat heaters | per-seat ON/OFF | TBD | ⬜ |
-| Custom: steering wheel heater | Steering Heater | TBD | ⬜ |
-| Custom: defogger / deicer | Rear Defogger / Front Deicer Relay | TBD | ⬜ |
-| Custom: refrigerant high/low pressures | Regulator / Evaporator pressure sensors | TBD | ⬜ |
-| Custom: solar sensors | Front Left/Right Solar Sensor (W/m²) | TBD | ⬜ — sun-load awareness |
-
 ## Implications for cabin preconditioning
 
-OVMS can implement **cabin climate preconditioning** alongside battery preconditioning by:
+A client can implement **cabin climate preconditioning** alongside battery preconditioning by:
 
 1. Reading current cabin temperature (`0x1001`) and setpoint (`0x1036`)
 2. Determining heating vs cooling need
-3. Engaging the HV Electric Heater (for cabin warming) or compressor (for cabin cooling) — **but the mechanism for OVMS-side activation isn't yet known**. Toyota likely has a "Remote Climate" routine or DID; the EV ECU's "Remote Air Control System" parameter (currently "Unable") is suggestive — if we can trigger that, the HVAC will autonomously run to setpoint without us having to drive each individual valve and pump.
+3. Engaging the HV Electric Heater (for cabin warming) or compressor (for cabin cooling) — **but the activation mechanism isn't yet known**. Toyota likely has a "Remote Climate" routine or DID; the EV ECU's "Remote Air Control System" parameter (currently "Unable") is suggestive — if we can trigger that, the HVAC will autonomously run to setpoint without driving each individual valve and pump.
 4. Pairing with battery preconditioning so both are ready when the user reaches a charger / leaves home
 
 ## Cross-ECU coordination map
@@ -225,8 +206,8 @@ For preconditioning **heating**, our `0x2F 28 06 03 00 01 00 01` on EV Battery e
 
 ## Open questions
 
-- **DIDs for blower / dampers / heaters** — single-parameter isolation runs in Techstream Data List would pin them quickly. Each one unlocks an OVMS metric.
+- **DIDs for blower / dampers / heaters** — single-parameter isolation runs in Techstream Data List would pin them quickly. Each one unlocks another decoded signal.
 - **Compressor speed control DID** — for instantaneous AC kW estimation alongside the EV ECU's "A/C Consumption Power" cross-broadcast.
-- **"Remote Air Control System" mechanism** — the EV ECU exposes this parameter (currently "Unable" because no Bluetooth/cellular remote command is active). Find the routine ID or DID that triggers it for OVMS-driven cabin preconditioning. Likely a `0x31 01` routine on this ECU.
-- **Heat-pump mode flag** — the system supports heat-pump heating (extracts heat from refrigerant loop instead of using PTC). When the heat pump is in heating mode, the refrigerant flow direction reverses. Worth identifying the mode flag for OVMS to display.
+- **"Remote Air Control System" mechanism** — the EV ECU exposes this parameter (currently "Unable" because no Bluetooth/cellular remote command is active). Find the routine ID or DID that triggers it for externally-driven cabin preconditioning. Likely a `0x31 01` routine on this ECU.
+- **Heat-pump mode flag** — the system supports heat-pump heating (extracts heat from refrigerant loop instead of using PTC). When the heat pump is in heating mode, the refrigerant flow direction reverses. Worth identifying the mode flag for downstream display.
 - **Why air outlet (78.6 °F) > cabin (72.0 °F) when AC is running** — likely the HV Electric Heater coolant loop is at 82-84 °F warming the cabin heater core even though the heater itself is OFF. Need to characterize this further to understand cabin thermal lag.

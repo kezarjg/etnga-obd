@@ -85,16 +85,16 @@ The Data List uses simple Read-DID polling (no dynamic DIDs). When all 25 parame
 | Stop Light Switch | `0x1001` | one bit (position TBD) |
 | IGP Relay Circuit (Outside) Monitor | `0x1003` | one bit (position TBD) |
 
-## OVMS mappings
+## Decoded signal summary
 
-| OVMS metric | DID | Status |
+| Signal | DID | Status |
 |---|---|---|
-| `v.p.odometer` | `0x0103` (this ECU) | ✅ Decoded — bytes 1-3 (uint24 BE), unit-aware via byte 0. Note: also available via OBD-II Mode 01 PID `0xA6` from `0x7E2` (no transcoding needed if we use the standardized path). |
+| Odometer | `0x0103` (this ECU) | Decoded — bytes 1-3 (uint24 BE), unit-aware via byte 0. Note: also available via OBD-II Mode 01 PID `0xA6` from `0x7E2` (no transcoding needed if we use the standardized path). |
 
 **No HV-side metrics** — this ECU does not own ready state, contactor state, or HV bus voltage despite the misleading name. Look for those on EV ECU (`0x7D2`) and EV Battery (`0x747`).
 
 ## Open questions
 
 - Bit positions for the booleans in `0x1001` and `0x1003` — needs a session where the user toggles physical inputs (brake, push start, gear) one at a time with capture running.
-- DID-to-parameter mapping for `0x1004`, `0x1005`, `0x1006`, `0x1007`, `0x1008` — only mapped 8 of 25 parameters before pivoting. Worth completing if a future session needs body/ignition state for OVMS — but per the analysis above, the OVMS-relevant data is on other ECUs.
+- DID-to-parameter mapping for `0x1004`, `0x1005`, `0x1006`, `0x1007`, `0x1008` — only mapped 8 of 25 parameters before pivoting. Worth completing if a future session needs body/ignition state — but per the analysis above, the higher-value telemetry is on other ECUs.
 - Confirm `0x02 = mile` / `0x01 = km` for `0x0103` byte 0 by changing the unit in the cluster settings (or, more practically, just trust the inference).

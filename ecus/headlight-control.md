@@ -16,7 +16,7 @@ confidence: high
 
 Behind the gateway at `0x750` sub-target `0x70`. The primary headlight controller (the AFS / auto-leveling ECU). Has a sub-controller at `0x750/0x1E` ("Headlight Control (Sub)") presumably for the other side or for backup.
 
-Smaller Data List than expected (~25 parameters). Closes the basic "are the headlights on" question for OVMS but **does not expose** turn signals, hazard flash state, high beam, or fog lights — those live elsewhere (TBD).
+Smaller Data List than expected (~25 parameters). Closes the basic "are the headlights on" question but **does not expose** turn signals, hazard flash state, high beam, or fog lights — those live elsewhere (TBD).
 
 ## Diagnostics
 
@@ -29,13 +29,13 @@ Smaller Data List than expected (~25 parameters). Closes the basic "are the head
 
 ## Functional content (per Data List, 2026-05-08)
 
-### Light states (the OVMS-relevant content)
+### Light states (vehicle-state content)
 
-| Parameter | Sample | OVMS use |
+| Parameter | Sample | Use |
 |---|---|---|
-| **Low Beam** | ON | `v.e.headlights` primary indicator |
-| **Daytime Running Light** | OFF | DRL state (custom) |
-| **Clearance Light (+ Front Side Marker Light)** | ON | parking/marker lights (custom) |
+| **Low Beam** | ON | primary headlight indicator |
+| **Daytime Running Light** | OFF | DRL state |
+| **Clearance Light (+ Front Side Marker Light)** | ON | parking/marker lights |
 | **Cornering Light / Front Side Illuminate Light** | OFF | cornering light state |
 | **Cornering Light / Front Side Illuminate Light (Dim)** | OFF | dimmed cornering state |
 
@@ -77,19 +77,10 @@ Used by the AFS for steering-tracking and motion-aware lighting:
 | Powertrain Status | ON | cross-broadcast |
 | BIN1 Positive Terminal Rank | Rank D | possibly market/region bin coding ("Rank D" purpose TBD) |
 
-## OVMS mappings
-
-| OVMS metric | Source parameter | Status |
-|---|---|---|
-| **`v.e.headlights`** | Low Beam (ON/OFF) | ⬜ DID isolation pending |
-| Custom: DRL | Daytime Running Light | ⬜ |
-| Custom: parking/marker lights | Clearance Light + Front Side Marker | ⬜ |
-| Custom: cornering light | Cornering Light / Front Side Illuminate Light | ⬜ |
-
-## What's NOT here (OVMS gaps still open)
+## What's NOT here (gaps still open)
 
 The Data List doesn't expose:
-- **Turn signal state** (left / right) — `v.e.headlights.turn` not findable here
+- **Turn signal state** (left / right) — not findable here
 - **Hazard light flashing state** — Cluster's "Hazard Flasher Switch" tracks the *button*, not the actual flash output
 - **High beam state** — owned by the AHS (Adaptive High-beam System) ECU which on this car reports "Not Available". May be readable via a different parameter or Combination Switch ECU.
 - **Fog light state** — not exposed here

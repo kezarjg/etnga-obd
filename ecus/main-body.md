@@ -18,7 +18,7 @@ confidence: high
 
 Behind the gateway at `0x750` sub-target `0x40`. Frames address as `750#40 …` / `758#40 …`. Toyota EM "F8 Main Body ECU" on the B-CAN bus.
 
-This is the **body-state mother lode for OVMS** — owns door states, lock states, hood/trunk, window positions, seat memory + driver recognition, mirror controls, wiper system, rain sensor (if equipped), light sensor / solar / illuminance, AHS/LDM coordination, and **humidity + glass temperature** (used by auto-defrost and useful for OVMS preconditioning logic).
+This is the **body-state mother lode** — owns door states, lock states, hood/trunk, window positions, seat memory + driver recognition, mirror controls, wiper system, rain sensor (if equipped), light sensor / solar / illuminance, AHS/LDM coordination, and **humidity + glass temperature** (used by auto-defrost and useful for preconditioning logic).
 
 ## Diagnostics
 
@@ -33,19 +33,19 @@ This is the **body-state mother lode for OVMS** — owns door states, lock state
 
 ### Door states (5 doors)
 
-| Parameter | Sample | OVMS metric |
+| Parameter | Sample | Notes |
 |---|---|---|
-| FR/FL/RR/RL Door Courtesy Switch Status | Close each | `v.d.fr`, `v.d.fl`, `v.d.rr`, `v.d.rl` (door open/closed) |
-| Back Door Courtesy Switch Status | Close | `v.d.tr` (trunk/liftgate) |
-| Hood Courtesy Switch Status | Close | `v.d.hood` |
+| FR/FL/RR/RL Door Courtesy Switch Status | Close each | per-door open/closed |
+| Back Door Courtesy Switch Status | Close | trunk/liftgate |
+| Hood Courtesy Switch Status | Close | hood |
 
 ### Door lock states
 
-| Parameter | Sample | OVMS metric |
+| Parameter | Sample | Notes |
 |---|---|---|
-| FR/FL/RR/RL Door Lock Position Switch Status | Unlock each | per-door lock (custom) |
-| Back Door Lock Position Status | Unlock | back-door lock (custom) |
-| **`v.e.locked`** (derived) | not directly exposed | All 5 in "Lock" state ⇒ `v.e.locked = true` |
+| FR/FL/RR/RL Door Lock Position Switch Status | Unlock each | per-door lock |
+| Back Door Lock Position Status | Unlock | back-door lock |
+| **All-locked** (derived) | not directly exposed | All 5 in "Lock" state ⇒ vehicle fully locked |
 
 ### Lock/unlock command switches (input source detection)
 
@@ -86,7 +86,7 @@ For each of D / P / RR / RL doors, the ECU exposes:
 | Power Window UP / DOWN Switch | OFF / OFF | manual buttons |
 | Power Window Initialize Status | Initialized | calibration learned |
 
-The 4 quadrant flags per window give **discrete window position** for OVMS — closer to closed/open vs. nominal "are windows open" without full % resolution.
+The 4 quadrant flags per window give **discrete window position** — closer to closed/open vs. nominal "are windows open" without full % resolution.
 
 ### Wipers + rain sensor
 
@@ -153,7 +153,7 @@ The solar sensors are **duplicated from HVAC** (`0x7C4` also has Front Left/Righ
 
 Front seat occupancy is on the SRS Airbag ECU (`0x780`), not here.
 
-### **Humidity and glass temperatures** (for auto-defrost + OVMS preconditioning use)
+### **Humidity and glass temperatures** (for auto-defrost + preconditioning use)
 
 | Parameter | Sample | Notes |
 |---|---|---|
@@ -161,7 +161,7 @@ Front seat occupancy is on the SRS Airbag ECU (`0x780`), not here.
 | **Glass Temperature** | 75.2 °F | windshield surface temp |
 | **Glass Surroundings Temperature** | 83.3 °F | air temp near the glass |
 
-**This is high-value novel content for OVMS.** Cabin preconditioning logic can use humidity + glass temp delta to anticipate defrost needs and decide whether to engage the rear defogger / front deicer along with cabin warming.
+**This is high-value novel content.** Cabin preconditioning logic can use humidity + glass temp delta to anticipate defrost needs and decide whether to engage the rear defogger / front deicer along with cabin warming.
 
 ### Driver Recognition + Smart Key linking
 
@@ -182,27 +182,6 @@ So the user has 1 physical key paired to Driver1, no digital keys paired.
 | Driver Seat MEM_1/2/3 Memory | Without each | no memory positions saved |
 | MEM Switch No. with Key ID 1-7 | NONE each | no key-to-memory-position bindings |
 
-## OVMS mappings — body state (the major OVMS gap pre-2026-05-08)
-
-| OVMS metric | Source parameter | Status |
-|---|---|---|
-| `v.d.fl` | FL Door Courtesy Switch Status | ⬜ DID isolation pending |
-| `v.d.fr` | FR Door Courtesy Switch Status | ⬜ |
-| `v.d.rl` | RL Door Courtesy Switch Status | ⬜ |
-| `v.d.rr` | RR Door Courtesy Switch Status | ⬜ |
-| `v.d.tr` | Back Door Courtesy Switch Status | ⬜ |
-| `v.d.hood` | Hood Courtesy Switch Status | ⬜ |
-| **`v.e.locked`** | derive: AND of 5 Door Lock Position Switch Status == "Lock" | ⬜ |
-| Custom per-door lock | FR/FL/RR/RL/Back Door Lock Position | ⬜ |
-| Custom: 4 windows × 4 quadrant positions | D/P/RR/RL P/W Jam Protection Glass Position | ⬜ |
-| Custom: 3 rear-seat occupancy | RC/RL/RR Seat Occupant Sensor | ⬜ |
-| Custom: ambient illuminance | Light Sensor Illuminance | ⬜ |
-| Custom: solar load (left + right) | Insolation Amount of Solar Sensor RH/LH | ⬜ |
-| **Custom: cabin humidity** | Humidity (25.4 % at idle) | ⬜ — feeds defrost-need logic |
-| **Custom: glass temperature + ambient-near-glass** | Glass Temperature, Glass Surroundings Temperature | ⬜ — feeds defrost decision |
-| Custom: wiper auto mode active | Wiper Switch Auto Signal | ⬜ |
-| Custom: outer mirror auto-fold enabled | Outer Mirror Auto Switch | ⬜ |
-
 ## Notable findings about THIS car
 
 - **AHS Not Available** — no Adaptive High-beam System.
@@ -215,7 +194,7 @@ So the user has 1 physical key paired to Driver1, no digital keys paired.
 
 ## Open questions
 
-- **DID isolation for the 6 door/trunk/hood states** — single biggest yield (knocks out the entire `v.d.*` namespace for OVMS).
+- **DID isolation for the 6 door/trunk/hood states** — single biggest yield (knocks out all per-door state signals at once).
 - **Lock-state aggregation** — is there a single "all locked" DID, or do we read 5 individual flags and AND them?
 - **Window positions** — the 4-quadrant resolution per door is unusual. Is there a finer-grained DID with actual % position, or is the quadrant the best Toyota exposes?
 - **Headlight on/off state** — not in this Data List. Probably on Headlight Control (`0x750/0x70`) or scaffolded via Wiper / Light switch DIDs.

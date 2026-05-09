@@ -15,9 +15,9 @@ confidence: high
 
 # Power Distribution Box
 
-Behind the gateway at `0x750` sub-target `0x4D`. Per Toyota EM topology, this is **F143/F144 in the passenger-side kick panel area** (same area we'll be working in for the F39 OVMS install).
+Behind the gateway at `0x750` sub-target `0x4D`. Per Toyota EM topology, this is **F143/F144 in the passenger-side kick panel area** (same area F39 sits in).
 
-Small Data List (~22 parameters) — just a handful of relay/fuse-level circuits and a power-bus status panel. **But it owns the 3 rear seatbelt buckle switches**, which fills a critical OVMS gap.
+Small Data List (~22 parameters) — just a handful of relay/fuse-level circuits and a power-bus status panel. **But it owns the 3 rear seatbelt buckle switches**, which closes the seatbelt picture for the rear seats.
 
 ## Diagnostics
 
@@ -68,15 +68,15 @@ Small Data List (~22 parameters) — just a handful of relay/fuse-level circuits
 | Tail Light Internal Relay Input Signal | ON | command from Headlight Control |
 | Tail Light Internal Relay Output Signal | ON | actual output (matches Headlight Control's Clearance Light = ON) |
 
-### **Rear seatbelt buckle switches** (the OVMS jewel of this ECU)
+### **Rear seatbelt buckle switches** (the headline content of this ECU)
 
-| Parameter | Sample | OVMS metric |
+| Parameter | Sample | Notes |
 |---|---|---|
-| Rear Seat RH Buckle Switch Status | Unset | `v.e.belts.rearright` (custom or composite) |
-| Rear Seat Center Buckle Switch Status | Unset | `v.e.belts.rearcenter` |
-| Rear Seat LH Buckle Switch Status | Unset | `v.e.belts.rearleft` |
+| Rear Seat RH Buckle Switch Status | Unset | rear-right belt |
+| Rear Seat Center Buckle Switch Status | Unset | rear-center belt |
+| Rear Seat LH Buckle Switch Status | Unset | rear-left belt |
 
-**Combined with the other ECUs**, OVMS now has the complete 5-seat seatbelt picture:
+**Combined with the other ECUs**, the complete 5-seat seatbelt picture is available across the diagnostic surface:
 
 | Seat | Source ECU | Parameter |
 |---|---|---|
@@ -85,18 +85,6 @@ Small Data List (~22 parameters) — just a handful of relay/fuse-level circuits
 | Rear Left | **Power Distribution Box `0x750/0x4D`** | "Rear Seat LH Buckle Switch Status" |
 | Rear Center | **Power Distribution Box `0x750/0x4D`** | "Rear Seat Center Buckle Switch Status" |
 | Rear Right | **Power Distribution Box `0x750/0x4D`** | "Rear Seat RH Buckle Switch Status" |
-
-## OVMS mappings
-
-| OVMS metric | Source | Status |
-|---|---|---|
-| `v.e.belts.rearleft` (custom) | Rear Seat LH Buckle Switch Status | ⬜ DID isolation pending |
-| `v.e.belts.rearcenter` (custom) | Rear Seat Center Buckle Switch Status | ⬜ |
-| `v.e.belts.rearright` (custom) | Rear Seat RH Buckle Switch Status | ⬜ |
-| Custom: rear defogger active | Rear Defogger Output Signal + Output Current | ⬜ |
-| Custom: backup light active | Back-up Light Output Signal | ⬜ — alternate "is the car in reverse" indicator |
-| Custom: tail light state | Tail Light Internal Relay Output Signal | ⬜ — matches Headlight Control's Clearance Light |
-| Custom: fuse shut-off counters | Rear Defogger / Back-up Light Fuse Shut Off Count | ⬜ — lifetime fuse events for diagnostics |
 
 ## Open questions
 

@@ -41,7 +41,7 @@ Each is the inverter ECU co-located with its motor — it reads the local resolv
 
 Both ECUs expose the **standard OBD-II emission-monitor framework** even though it's a BEV. Calculate Load, Coolant Temperature, Engine Speed, Intake Air Temperature, Throttle Position — all present, all sentinel zeros / 32 °F. The MIL/DTC/monitor framework is here because OBD-II Mode 01/06/09 compliance has to be served from somewhere. These ECUs answer for the powertrain.
 
-Treat all emission-monitor parameters as **non-meaningful sentinels** — they exist for compliance, not for OVMS.
+Treat all emission-monitor parameters as **non-meaningful sentinels** — they exist for compliance, not for vehicle telemetry.
 
 The real content is the motor/inverter telemetry below.
 
@@ -70,7 +70,7 @@ These are **new** — the EV ECU doesn't expose them.
 
 | Parameter | Front | Rear | Notes |
 |---|---|---|---|
-| **Motor Temperature** | 66 °F | 63 °F | **stator temperature** — direct OVMS `v.m.temp` candidate |
+| **Motor Temperature** | 66 °F | 63 °F | **stator temperature** |
 | Motor Temperature Sensor Voltage / Sensor AD Value | 3.63 V | 3.748 V | raw thermistor voltage |
 | **Transaxle Oil Temperature** | 66 °F | 61 °F | **gearbox oil temp** — useful for transmission health |
 | Transaxle Oil Temperature Sensor Voltage | 2.89 V | 2.97 V | raw |
@@ -131,34 +131,34 @@ The 1.3-1.4 V offset between pack voltage and bus voltage is consistent with HV 
 
 Standard cross-broadcast values: Battery Voltage (12V aux), Ambient Temperature, Total Distance Traveled, Vehicle Speed, Accelerator Position, Shift Position, Ready ON Status, SMR Status, Inter Lock Connect Status, Short Wave Highest Value, WIN/WOUT Control Limit Power, Fail Safe Mode, Emergency Shutdown Signal.
 
-## OVMS mappings
+## Signal availability
 
-### Already covered by EV ECU (no need to re-poll these ECUs for these metrics)
+### Already covered by the EV ECU (no need to re-poll these ECUs for these metrics)
 
-`v.m.rpm`, `v.m.rpm.rear`, `v.m.torque`, `v.m.torque.rear`, `v.i.temp`, `v.i.temp.rear` — same source DIDs cross-broadcast on the EV ECU.
+Front + rear motor RPM and torque, front + rear inverter temperature — same source DIDs cross-broadcast on the EV ECU.
 
 ### Newly available from these ECUs (worth polling here)
 
-| OVMS metric | ECU | Parameter | Status |
+| Signal | ECU | Parameter | Status |
 |---|---|---|---|
-| `v.m.temp` | `0x724` (front) | Motor Temperature (stator, °F) | ⬜ DID isolation needed |
-| `v.m.temp.rear` | `0x705` | Rear Motor Temperature | ⬜ |
-| Custom `v.t.front.oil.temp` | `0x724` | Transaxle Oil Temperature | ⬜ |
-| Custom `v.t.rear.oil.temp` | `0x705` | Transaxle Oil Temperature | ⬜ |
-| Custom `v.m.front.bus.voltage` | `0x724` | VH Voltage | ⬜ |
-| Custom `v.m.rear.bus.voltage` | `0x705` | VLR Voltage | ⬜ |
-| Custom: rear-inverter-shutdown flag | `0x705` | Rear Inverter Shut Down Status | ⬜ — useful for AWD-mode awareness |
+| Front motor (stator) temperature | `0x724` | Motor Temperature (stator, °F) | DID isolation needed |
+| Rear motor (stator) temperature | `0x705` | Rear Motor Temperature | DID isolation needed |
+| Front transaxle oil temperature | `0x724` | Transaxle Oil Temperature | DID isolation needed |
+| Rear transaxle oil temperature | `0x705` | Transaxle Oil Temperature | DID isolation needed |
+| Front DC bus voltage | `0x724` | VH Voltage | DID isolation needed |
+| Rear DC bus voltage | `0x705` | VLR Voltage | DID isolation needed |
+| Rear-inverter-shutdown flag | `0x705` | Rear Inverter Shut Down Status | useful for AWD-mode awareness |
 
 The **stator temperatures** are the highest-value addition — driver-relevant for "did I push the motor too hard during this drive?" indicators, and useful in long high-load events (e.g., towing or sustained climbing).
 
-The transaxle oil temperatures round out an OVMS "powertrain health" page — useful baseline for fleet diagnostics.
+The transaxle oil temperatures round out a "powertrain health" view — useful baseline for fleet diagnostics.
 
 ## Open questions
 
 - **Why is rear motor carrier frequency 12 (vs 2 for front)?** Even with the rear inverter shut down, this default value is interesting. Likely just a sleep-state default. May change during active driving.
 - **Why does front "Motor Inverter Shut Down Signal = 4" while rear = 0**? Front is awake yet has a non-zero shutdown signal? Could be an enum where 4 = "limited mode" or "ready but not commanded".
 - **Are oil pump and inverter coolant pump truly shared?** The values from both ECUs match exactly — suggests yes, both ECUs read from the same source. EV ECU `0x7D2` likely owns these and broadcasts.
-- **Phase current sign convention** — at idle, currents are small but non-zero (0.3 / -0.5 / 1.0 A). Likely a balanced 3-phase modulation maintaining alignment without producing torque. Worth verifying during a drive cycle for OVMS phase-current display.
+- **Phase current sign convention** — at idle, currents are small but non-zero (0.3 / -0.5 / 1.0 A). Likely a balanced 3-phase modulation maintaining alignment without producing torque. Worth verifying during a drive cycle for any phase-current display.
 
 ## Notes on the OBD-II compliance shell
 

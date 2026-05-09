@@ -16,7 +16,7 @@ confidence: high
 
 Behind the gateway at `0x750` sub-target `0xC7`. Toyota's Data Communication Module — the cellular modem that connects the car to Toyota's cloud services (Toyota Connected, Stolen Vehicle Tracking, Automatic Collision Notification, Remote A/C, etc.).
 
-> **Lower direct OVMS value than expected.** The Data List is mostly **Toyota Connected service-enablement flags** (which features are Enable / Disable / Registered) — configuration state, not real-time vehicle metrics. The cellular modem identifiers (IMEI / MSISDN / ICCID) are exposed here. Notably **absent**: cell signal strength, modem state, GPS position.
+> **Lower direct telemetry value than expected.** The Data List is mostly **Toyota Connected service-enablement flags** (which features are Enable / Disable / Registered) — configuration state, not real-time vehicle metrics. The cellular modem identifiers (IMEI / MSISDN / ICCID) are exposed here. Notably **absent**: cell signal strength, modem state, GPS position.
 
 ## Diagnostics
 
@@ -103,14 +103,14 @@ Currently **disabled**:
 | Dormant Flag | OFF | DCM not in long-term dormant state |
 | New Energy Vehicle | OFF | unexpected "OFF" — this IS a BEV. Possibly market-specific flag. |
 
-## OVMS mappings
+## Useful telemetry from this ECU
 
 Almost nothing — this ECU exposes service configuration, not real-time vehicle state. The only potentially useful items:
 
-| OVMS metric | Source | Use |
+| Signal | Source | Use |
 |---|---|---|
-| Custom: telematics activation status | Telematics Activation Status | one-time read for "is Toyota Connected active" |
-| Custom: cellular network identifiers | IMEI / MSISDN / ICCID | one-time read for device provenance — but OVMS has its own cellular modem so these are informational only |
+| Telematics activation status | Telematics Activation Status | one-time read for "is Toyota Connected active" |
+| Cellular network identifiers | IMEI / MSISDN / ICCID | one-time read for device provenance — informational only for any external integration with its own connectivity |
 
 ## Notable absences (things I expected but didn't find)
 

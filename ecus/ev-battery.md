@@ -53,22 +53,22 @@ Techstream uses UDS service `0x2C 01` (DynamicallyDefineDataIdentifier By Identi
 
 **Always-bundled fault sidecar:** every dynamic DID definition observed in 2026-05-08 included `0x1F01` byte 1 (1 byte) at the end. Likely a fault/health aggregate that Techstream watches alongside whatever specific signal the user is reading. Worth a direct `0x22 1F 01` read to dump the full surface.
 
-**Direct DID polling also works** — confirmed by the user's ABRP integration which reads source DIDs (e.g., `0x1F9A`, `0x1814`, `0x1D3E`) directly via `0x22` without setting up a dynamic DID. The `0x2C` mechanism is a Techstream optimization (one big poll vs. many small polls); OVMS can ignore it and read source DIDs directly. **This is what the OVMS Solterra module should do.**
+**Direct DID polling also works** — confirmed by the public ABRP bZ4X/Solterra OBD config (https://abetterrouteplanner.com), which reads source DIDs (e.g., `0x1F9A`, `0x1814`, `0x1D3E`) directly via `0x22` without setting up a dynamic DID. The `0x2C` mechanism is a Techstream optimization (one big poll vs. many small polls); any client can ignore it and read source DIDs directly.
 
 ## DIDs decoded (2026-05-08_2058_ev-battery-data-list)
 
 Mapped via single-parameter Data List isolation. Each row gives the source DID location (revealed by Techstream's `0x2C 01` setup) and the encoding (deduced from the response data + displayed value).
 
-| OVMS metric | Source DID | Position (1-indexed) | Size | Encoding | Notes / verified value |
+| Signal | Source DID | Position (1-indexed) | Size | Encoding | Notes / verified value |
 |---|---|---|---|---|---|
-| **`v.b.soc`** | `0x1F5B` | 1 | 1 byte | `byte × 100 / 255` → % | `0xE6` = 230 → 90.196% (display 90.19%) ✓ |
-| **`v.b.voltage`** | `0x1F9A` | 3 | 2 bytes | uint16 BE × 1/64 → V (LSB ≈ 15.625 mV) | `0x6200` = 25088 → 392.00 V ✓ |
-| **`v.b.current`** | `0x1F9A` | 5 | 2 bytes | int16 BE × 0.1 → A | `0x0018` = 24 → 2.4 A ✓ **Sign confirmed 2026-05-09 via drive cycle: `+` = discharge** (peak +312 A under acceleration, −62 A during regen) |
-| **`v.e.on`** | `0x1076` | 2 | 1 byte | bool (1 = Ready ON, 0 = OFF) | `0x01` = ON ✓ |
-| **`v.b.cell.voltage[1..96]`** | `0x182E` | 1 (then 3, 5, …) | 2 bytes per cell | uint16 BE × 5/65535 → V (LSB ≈ 76.3 µV) | `0xD19D` = 53661 → 4.0946 V (display 4.09 V) ✓ — full 192-byte block returns all 96 cells in cell order |
-| **`v.b.cell.temp[1..24]`** | `0x1814` | 1 (then 3, 5, …) | 2 bytes per sensor | byte 0 of slot − 50 → °C (1 °C resolution) | `0x42` = 66 → 16 °C (display 60.8 F = 16.0 °C) ✓ — full 48-byte block. byte 1 of each slot purpose TBD. |
-| **`v.b.coolant.temp`** | `0x1848` | 1 | 2 bytes | byte 1 − 50 → °C; byte 0 = sensor voltage × 1/80 V | `0x87 0x44` → 0.5×voltage 1.69 V + 18 °C (display 64.94 F = 18.30 °C, 1.69 V sensor) ✓ |
-| `v.p.odometer` | `0x0103` | 1 | 4 bytes | byte 0 = unit (0x02 = mile), bytes 1-3 = uint24 BE odometer | `02 00 5B A5` = 23461 mile ✓ — same DID as Power Source Control |
+| **Pack SOC** | `0x1F5B` | 1 | 1 byte | `byte × 100 / 255` → % | `0xE6` = 230 → 90.196% (display 90.19%) ✓ |
+| **Pack voltage** | `0x1F9A` | 3 | 2 bytes | uint16 BE × 1/64 → V (LSB ≈ 15.625 mV) | `0x6200` = 25088 → 392.00 V ✓ |
+| **Pack current** | `0x1F9A` | 5 | 2 bytes | int16 BE × 0.1 → A | `0x0018` = 24 → 2.4 A ✓ **Sign confirmed 2026-05-09 via drive cycle: `+` = discharge** (peak +312 A under acceleration, −62 A during regen) |
+| **Ready ON** | `0x1076` | 2 | 1 byte | bool (1 = Ready ON, 0 = OFF) | `0x01` = ON ✓ |
+| **Per-cell voltage [1..96]** | `0x182E` | 1 (then 3, 5, …) | 2 bytes per cell | uint16 BE × 5/65535 → V (LSB ≈ 76.3 µV) | `0xD19D` = 53661 → 4.0946 V (display 4.09 V) ✓ — full 192-byte block returns all 96 cells in cell order |
+| **Per-sensor cell temperature [1..24]** | `0x1814` | 1 (then 3, 5, …) | 2 bytes per sensor | byte 0 of slot − 50 → °C (1 °C resolution) | `0x42` = 66 → 16 °C (display 60.8 F = 16.0 °C) ✓ — full 48-byte block. byte 1 of each slot purpose TBD. |
+| **Battery coolant temperature** | `0x1848` | 1 | 2 bytes | byte 1 − 50 → °C; byte 0 = sensor voltage × 1/80 V | `0x87 0x44` → 0.5×voltage 1.69 V + 18 °C (display 64.94 F = 18.30 °C, 1.69 V sensor) ✓ |
+| Odometer | `0x0103` | 1 | 4 bytes | byte 0 = unit (0x02 = mile), bytes 1-3 = uint24 BE odometer | `02 00 5B A5` = 23461 mile ✓ — same DID as Power Source Control |
 
 ## Pack-level structure of `0x1F9A`
 
@@ -86,7 +86,7 @@ Worth a direct `0x22 1F 9A` read (no dynamic DID setup needed) to see the comple
 
 192 bytes = 96 × 2-byte uint16 BE values, in cell-numbered order (Cell N at byte offset 2N-2 zero-indexed, or position 2N-1 1-indexed). Encoding: voltage = `raw × 5 / 65535` V (5 V full-scale ADC mapping, LSB ≈ 76.3 µV).
 
-To poll all 96 cells in OVMS: single `0x22 18 2E` request, parse 96 × 2 bytes from the multi-frame response.
+To poll all 96 cells: single `0x22 18 2E` request, parse 96 × 2 bytes from the multi-frame response.
 
 ## Cell temperature block `0x1814` — confirmed structure
 
@@ -110,7 +110,7 @@ Captured for context — confirms which parameters are realistic to expect / dec
 
 ## Other parameters in the Data List (~250 total) — not yet isolated
 
-Among the unmapped, several are high-priority for OVMS or for SoH derivation:
+Among the unmapped, several are high-priority for general telemetry or for SoH derivation:
 
 - **Cell Maximum/Minimum Voltage Up to 1 trip before** — direct SoH proxy (cell spread)
 - **Cell Internal Resistance × 96** — direct SoH input when read under load
@@ -188,11 +188,11 @@ The Battery ECU enforces preconditions before accepting these tests. If conditio
 
 Note the "other Active Tests not being performed" guard for Water Cooling. Toyota's documented expectation is one test at a time; in practice the BMS auto-runs the chiller alongside the pump (we observed this), so the constraint may be enforced only between user-invoked tests, not between user-invoked and BMS-internal.
 
-### Safety NOTICE from RM (must apply for OVMS use)
+### Safety NOTICE from RM (applies to any active-control consumer)
 
 > "It is necessary to use caution, because if the tester DLC connector becomes disconnected or if a communication error occurs during an Active Test, the vehicle could become inoperative (the READY light may go off)."
 
-Implication for the OVMS module: when running these tests autonomously (e.g. for preconditioning), the module **must** maintain a reliable command path and **must** issue the corresponding Stop (`0x31 02 11 24`) or returnControlToECU (`0x2F 28 06 00`) before any condition that could interrupt the connection. A keep-alive watchdog with bounded test duration is essential.
+Implication for any client running these tests autonomously (e.g. for preconditioning): the client **must** maintain a reliable command path and **must** issue the corresponding Stop (`0x31 02 11 24`) or returnControlToECU (`0x2F 28 06 00`) before any condition that could interrupt the connection. A keep-alive watchdog with bounded test duration is essential.
 
 ### Heuristic — which mechanism for which test
 
@@ -200,17 +200,17 @@ Implication for the OVMS module: when running these tests autonomously (e.g. for
 - Tests that have an On/Off toggle in Techstream → likely `0x2F` IOControl with shortTermAdjustment
 - The DID for `0x2F` tests is often the same as the corresponding Data List read DID (e.g., `0x2806` Heater Relay status is also where you write to override it)
 
-### OVMS implications
+### Notes on active control
 
-For OVMS to actively control the battery (e.g., trigger a balance or capacity routine), it can issue `0x31 01 RR RR` directly — no `0x2C` setup or session escalation needed beyond default session, based on what Techstream did. For monitoring whether a routine *would* succeed, `0x22 28 06` reads the current relay state without invoking control.
+To actively control the battery (e.g., trigger a balance or capacity routine), a client can issue `0x31 01 RR RR` directly — no `0x2C` setup or session escalation needed beyond default session, based on what Techstream did. For monitoring whether a routine *would* succeed, `0x22 28 06` reads the current relay state without invoking control.
 
 ## Open questions
 
-- **Sign convention for `v.b.current`**: positive observed at idle in Ready mode; need to charge the car and confirm negative when charging.
+- **Sign convention for pack current**: positive observed at idle in Ready mode; need to charge the car and confirm negative when charging.
 - **Vehicle Speed encoding** (`0x1F0D` per F302 inventory) — same DID as on EV ECU.
 - **Direction of "Integrated value for Maintenance"** (counts up since service or down to next).
 - **Cell temperature byte 1** — what does the second byte of each `0x1814` slot encode?
 - **`0x1F01` fault sidecar** — what does the full DID contain? Direct read would clarify.
 - **Capacity / SoH via UTILITY routine** — per `em-utility-routines.md`, the Battery Diagnosis routine (`0x1125`?) returns binary Normal/Replace, not %. Re-run after a full drive cycle to see if it gives a useful judgment.
-- **`0x1D3E` battery capacity DID** (from ABRP integration) — Techstream Data List doesn't expose a "Capacity" parameter; was `0x1D3E` a dead-end or is it a routine output? Worth re-investigating.
+- **`0x1D3E` battery capacity DID** (from the public ABRP bZ4X/Solterra OBD config) — Techstream Data List doesn't expose a "Capacity" parameter; was `0x1D3E` a dead-end or is it a routine output? Worth re-investigating.
 - ~~**Where is the actual OBC (A33)?**~~ — **Resolved 2026-05-08**: A33 is `0x745` (the same ECU as Plug-in Charge Control). See `plug-in-charge-control.md`. Toyota integrates session control + OBC hardware + DC-DC into one ECU; the Techstream "Plug-in Control" name disguised the full role.

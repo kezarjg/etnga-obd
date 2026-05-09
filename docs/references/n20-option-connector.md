@@ -48,22 +48,22 @@ The community has converged on these because they avoid crimping:
 
 ## Important: N20 is NOT co-located with F39
 
-This matters for an OVMS install:
+This matters when planning an aftermarket OBD-tap module install (any device that needs both 12 V power and a CAN data tap — telematics modules, custom data loggers, fleet trackers, etc.):
 
 | Connector | Location | Purpose |
 |---|---|---|
 | **F39** | Passenger-side kick panel area, near gateway / ECU Integration Box | CAN data tap (2-pin, A-CAN bus) |
 | **N20** | Headliner near rear-view mirror | Power tap (5-pin, B+/IG1/GND) |
 
-These are **physically far apart**. For an OVMS install you have three options:
+These are **physically far apart**. For an aftermarket module install you have three options:
 
-1. **OVMS module mounted at the headliner**: power from N20 (Dongar pigtail), run a cable down the A-pillar to F39 for CAN. Cable is just 2 wires (CAN-H/CAN-L) — easy enough to route along the existing A-pillar harness.
-2. **OVMS module mounted behind passenger kick panel**: power from a separate source near the kick panel (e.g., fuse-tap into Power Distribution Box F143/F144, or a different option connector if one exists in that area), CAN direct from F39. Cleanest mechanically but requires a separate power solution.
-3. **OVMS module mounted in the headliner area, no F39 use**: power from N20, CAN from somewhere else (e.g., a tap on the headliner harness itself). Probably not viable since the headliner harness doesn't carry the diagnostic / vehicle-state CAN buses.
+1. **Module mounted at the headliner**: power from N20 (Dongar pigtail), run a cable down the A-pillar to F39 for CAN. Cable is just 2 wires (CAN-H/CAN-L) — easy enough to route along the existing A-pillar harness.
+2. **Module mounted behind passenger kick panel**: power from a separate source near the kick panel (e.g., fuse-tap into Power Distribution Box F143/F144, or a different option connector if one exists in that area), CAN direct from F39. Cleanest mechanically but requires a separate power solution.
+3. **Module mounted in the headliner area, no F39 use**: power from N20, CAN from somewhere else (e.g., a tap on the headliner harness itself). Probably not viable since the headliner harness doesn't carry the diagnostic / vehicle-state CAN buses.
 
-## Recommendation for OVMS install on Solterra
+## Recommendation for aftermarket module install on Solterra
 
-Most likely **Option 1**: OVMS at the headliner near N20 (out of sight, easy power), with a 2-wire CAN extension running down the A-pillar to F39. Mounting up high also helps the OVMS module's GPS reception (better antenna view).
+Most likely **Option 1**: module at the headliner near N20 (out of sight, easy power), with a 2-wire CAN extension running down the A-pillar to F39. Mounting up high also helps any GPS reception (better antenna view) for modules that include a GPS receiver.
 
 Alternative **Option 2** is mechanically cleaner but needs a power source near the kick panel — typically a fuse-tap into the Power Distribution Box (F143/F144) using an add-a-fuse adapter on a circuit you don't mind sharing.
 

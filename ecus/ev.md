@@ -68,7 +68,7 @@ To identify the source DID for a single Techstream Data List item: enable only t
 | **Vehicle Speed** | `0x1F0D` | 1 | 1 | `0x00` parked | **1 LSB = 1 km/h** (confirmed via ABRP, max 210 km/h). |
 | Vehicle Speed when DC Quick Charging Connector Connect | `0x10E4` | 1 | 2 | `0x8000` | Sentinel "no recorded value" — car has presumably never been DC fast-charged while moving. |
 | **Parked flag** (within gear/state register) | `0x1061` | byte 1 (B) | bit 9 of B | — | ABRP reads `bit 9 of byte B` as parked flag. Full P/R/N/D enum elsewhere in this DID's bits — TBD. |
-| **HVAC power draw** | `0x106E` | 1 | 1 | — | ABRP equation `A / 20` → kW. Indicates climate-system instantaneous power. Useful as a `v.e.cooling`/`heating` proxy. |
+| **HVAC power draw** | `0x106E` | 1 | 1 | — | ABRP equation `A / 20` → kW. Indicates climate-system instantaneous power. Useful as a heating/cooling activity proxy. |
 
 ## Source DID inventory from the "all items" Data List
 
@@ -145,7 +145,7 @@ Also includes:
 ### Vehicle dynamics
 
 - Vehicle Speed (and `SP1 Vehicle Speed` separately)
-- Wheel Speeds × 4 (FR, FL, RR, RL) — useful for OVMS speed validation across sources
+- Wheel Speeds × 4 (FR, FL, RR, RL) — useful for speed validation across sources
 - Steering Angle (deg)
 - Forward and Rearward G, Lateral G (m/s²)
 - Yaw Rate Value (deg/s)
@@ -184,7 +184,7 @@ This ECU runs a **main DC/DC converter** that's separate from the "Sub DC/DC Con
 - Voltage Sensor (High Voltage Side) Unavailable Status
 - DC/DC Converter Diagnosis Status, CAN Unreceivable Status
 
-Confirmed at idle: Output Current 25.0 A, Output Voltage Low 13.35 V, High 393.31 V, target 13.4 V. **This ECU is the source for `v.b.12v.voltage` and `v.b.12v.current` — more authoritative than the cluster's `+B Voltage`.**
+Confirmed at idle: Output Current 25.0 A, Output Voltage Low 13.35 V, High 393.31 V, target 13.4 V. **This ECU is the authoritative source for 12V auxiliary voltage and current — more authoritative than the cluster's `+B Voltage`.**
 
 ### Inverter / motor cooling subsystem (separate loop from battery cooling)
 
@@ -213,9 +213,9 @@ This is the single biggest novel chunk vs. what the cluster exposes. The EV ECU 
 
 | Parameter | Sample value (idle, Ready) | Use |
 |---|---|---|
-| Auxiliary Battery Voltage | 13.58 V | `v.b.12v.voltage` (more authoritative than cluster) |
-| Auxiliary Battery Current | 0.61 A | `v.b.12v.current` |
-| Smoothed Value of Auxiliary Battery Temperature | 64.9 °F | `v.b.12v.temp` |
+| Auxiliary Battery Voltage | 13.58 V | 12V aux voltage (more authoritative than cluster) |
+| Auxiliary Battery Current | 0.61 A | 12V aux current |
+| Smoothed Value of Auxiliary Battery Temperature | 64.9 °F | 12V aux temperature |
 | Auxiliary Battery Voltage just before SMR Precharge | 10.99 V | precharge dip — useful health proxy |
 | Auxiliary Battery Charging Integrated Current | 2128.1 Ah | lifetime In counter |
 | Auxiliary Battery Discharging Integrated Current | 121.4 Ah | lifetime Out counter |
@@ -231,7 +231,7 @@ This is the single biggest novel chunk vs. what the cluster exposes. The EV ECU 
 | Total Distance Up to (1st…5th) Trip before | 23318/23311/23311/23308/23304 | rolling odometer history |
 | IG ON Time / Ready ON Time (1st…5th trip) | 16/272/6/8/28 min | per-trip duration history |
 
-**This is OVMS-grade 12V battery health data already computed by the car** — OVMS can expose it directly without re-deriving. Good "battery health" UI page material.
+**This is comprehensive 12V battery health data already computed by the car** — any client can expose it directly without re-deriving. Good "battery health" UI page material.
 
 ### Gear Shift Control Module (GSCM) — sub-ECU integrated here
 
@@ -258,7 +258,7 @@ Toyota records ~30+ "Trigger Counters" for irregular shift/driving events. Examp
 - "Auto Change to Shift Position P when Driver Get Out Trigger Counter" = 5
 - "Shift R/D Operation Rejection from Shift Position N during Accelerator Pedal Depress Trigger Counter" = 0
 
-Useful as a fingerprint of driving style. Probably persistent across the vehicle's lifetime. Could feed an OVMS "driving habits" page.
+Useful as a fingerprint of driving style. Probably persistent across the vehicle's lifetime. Could feed a "driving habits" UI page.
 
 ### Charging coordination signals (forwarded from `0x745`)
 
@@ -266,34 +266,12 @@ The EV ECU sees and forwards AC/DC charging relay statuses, permission signals, 
 
 ### Vehicle specification info (factory-fitted options)
 
-- Suspension Control Module / IGS / Advanced Park / Solar / Power Steering — each as "Specification Information Switching" (Supported/Not Supported) + "Specification Information" (existence flag) pairs. Lets OVMS know which options the car has.
-
-## OVMS mapping (post-2026-05-08 snapshot)
-
-| OVMS metric | Source | Status |
-|---|---|---|
-| `v.p.speed` | "Vehicle Speed" → `0x1F0D` byte 1 = km/h | ✅ confirmed via ABRP |
-| `v.m.rpm` | "Motor Revolution" | ⬜ DID not yet pinned |
-| `v.m.rpm.rear` | "Rear Motor Revolution" | ⬜ AWD-specific |
-| `v.m.torque` | "Motor Torque" | ⬜ |
-| `v.i.temp` | "Motor Inverter Temperature" | ⬜ — `v.i.temp.rear` also available |
-| `v.e.gear` | "Shift Position" | ⬜ — also "Shift Position (Meter)" duplicate |
-| `v.e.on` / Ready | "Ready Signal" — also at `0x747` `0x1076` byte 2 | ✅ via EV Battery |
-| `v.b.12v.voltage` | "Auxiliary Battery Voltage" — more authoritative than cluster's `0x1021` | ⬜ DID isolation needed |
-| `v.b.12v.current` | "Auxiliary Battery Current" | ⬜ |
-| `v.b.12v.temp` | "Smoothed Value of Auxiliary Battery Temperature" | ⬜ |
-| **`v.b.12v.cac`** (12V capacity) | "Auxiliary Battery Status of Full Charge" | ⬜ — **direct read, no derivation** |
-| `v.p.acceleration` | Forward/Rearward G + Lateral G | ⬜ |
-| `v.b.cooling.necessary` (custom) | "Hybrid/EV Battery Cooling Necessity before Charging" | ⬜ — preconditioning trigger source |
-| AWD coord status | "AWD Mode Status" | ⬜ |
-| 1 Pedal mode | "1 Pedal Mode" | ⬜ |
-| Grille shutter | "Grille Shutter Position" | ⬜ |
-| Trip counters | "Total Distance Up to N Trip before" + IG ON / Ready ON time | ⬜ — drives OVMS trip history page |
+- Suspension Control Module / IGS / Advanced Park / Solar / Power Steering — each as "Specification Information Switching" (Supported/Not Supported) + "Specification Information" (existence flag) pairs. Lets a client discover which options the car has.
 
 ## Open questions
 
-- **`v.b.range.est`** — searched for "Cruising Distance" / "Distance to Empty" / "Range" parameters; **none present in the EV ECU Data List** (also confirmed absent in Cluster `0x7C0` and EV Battery `0x747`). Range estimate is internal to the cluster and not exposed via diagnostic surface on any ECU. Must derive in OVMS or sniff from a CAN broadcast frame during driving.
-- **Why "Drive Mode = HV Mode" on a BEV** — Toyota's enum was carried over from the hybrid platform. The bZ4X is on eTNGA shared with PHEVs; the BEV variant probably reports `HV Mode` as a stand-in for "powered by the HV traction battery". Not a problem for OVMS, just a quirk to note.
+- **Range estimate** — searched for "Cruising Distance" / "Distance to Empty" / "Range" parameters; **none present in the EV ECU Data List** (also confirmed absent in Cluster `0x7C0` and EV Battery `0x747`). Range estimate is internal to the cluster and not exposed via diagnostic surface on any ECU. Must be derived externally or sniffed from a CAN broadcast frame during driving.
+- **Why "Drive Mode = HV Mode" on a BEV** — Toyota's enum was carried over from the hybrid platform. The bZ4X is on eTNGA shared with PHEVs; the BEV variant probably reports `HV Mode` as a stand-in for "powered by the HV traction battery". Just a quirk to note.
 - **Motor torque sign convention** — at idle, "Motor Torque = -0.13 Nm" (slightly negative). Likely sign convention is +ve = drive, −ve = regen. Confirm during a drive cycle.
 - **Single vs dual DC/DC architecture** — this ECU has the main DC/DC; `0x745` has the "Sub DC/DC Converter for Charging". Solterra has two physical DC/DC modules? Or two driver paths to one module? Worth checking against Toyota EM wiring diagrams.
 - **Anomaly counters as DID surface** — these are clearly stored persistently. If we read the underlying source DIDs we may find a "factory reset" routine ID that resets them. Useful or dangerous (clearing drives diagnostics).
@@ -310,7 +288,7 @@ This is consistent with the **eTNGA cross-broadcast model**: `0x1FXX` is the sha
 
 ## Source DID layout — fully decoded 2026-05-09
 
-The 2026-05-09 PID-mapping session captured the full F301/F302 dynamic-DID definitions and decoded most source DIDs by single-source isolation, drive-cycle cross-correlation, and physics regression. Authoritative table (also in `docs/ovms-module-plan.md`):
+The 2026-05-09 PID-mapping session captured the full F301/F302 dynamic-DID definitions and decoded most source DIDs by single-source isolation, drive-cycle cross-correlation, and physics regression. Authoritative table:
 
 ### F301 (40 sources, 226-byte response body)
 

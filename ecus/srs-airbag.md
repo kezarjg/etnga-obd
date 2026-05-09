@@ -16,7 +16,7 @@ confidence: high
 
 The Supplemental Restraint System controller. Owns airbag deployment logic, seatbelt pretensioner control, and **passenger seat occupancy detection** (the bZ4X has weight sensors on the passenger seat only — used to gate airbag deployment force, not driver-side).
 
-> **Lower OVMS yield than expected.** The Data List is heavily weighted toward diagnostic data (squib resistance values for every airbag igniter, load-sensor calibration history, sensor serial numbers). Only 3 parameters map to standard OVMS metrics. Useful for completeness but not a major coverage win.
+> **Lower vehicle-state yield than expected.** The Data List is heavily weighted toward diagnostic data (squib resistance values for every airbag igniter, load-sensor calibration history, sensor serial numbers). Only 3 parameters surface as standard vehicle-state signals. Useful for completeness but not a major coverage win.
 
 ## Diagnostics
 
@@ -27,12 +27,12 @@ The Supplemental Restraint System controller. Owns airbag deployment logic, seat
 | Transport | Standard ISO-TP |
 | Confirmed services | `0x10`, `0x19`, `0x22`, `0x3E` |
 
-## OVMS-relevant parameters (3)
+## Vehicle-state parameters (3)
 
-| Parameter | Sample | OVMS use |
+| Parameter | Sample | Notes |
 |---|---|---|
-| **Driver Seat Position Status** | "Vehicle Back Side" | Track position enum. Custom metric. |
-| **Passenger Seat Buckle Switch Status** | "Unbuckle" | `v.e.belts.passenger` (custom OVMS metric) |
+| **Driver Seat Position Status** | "Vehicle Back Side" | Track position enum |
+| **Passenger Seat Buckle Switch Status** | "Unbuckle" | passenger seatbelt buckled/unbuckled |
 | **Occupant Detection Status** | "Child" | Passenger seat classification: Empty / Child / Adult — gates airbag force |
 
 The SRS Airbag ECU **does not expose**:
@@ -41,12 +41,12 @@ The SRS Airbag ECU **does not expose**:
 - Driver seatbelt buckle (that's on the Cluster `0x7C0`)
 - Rear seat occupancy (those are on Main Body `0x750/0x40`)
 
-So for "is anyone in the car" awareness, OVMS would aggregate:
+So for "is anyone in the car" awareness, a client would aggregate:
 - Driver seat: occupancy assumed if Cluster's "Driver Buckle Switch" or shift-out-of-P
 - Passenger seat: this ECU's "Occupant Detection Status"
 - Rear seats × 3: Main Body's RC/RL/RR-Seat Occupant Sensor Switch
 
-## Diagnostic-only content (not OVMS-relevant)
+## Diagnostic-only content
 
 ### Squib resistance values (15 igniters, all measured ~2.2-2.97 Ω, all "Normal")
 
@@ -82,22 +82,14 @@ Both Outer sensors show "Not Learn Recorded" with sentinel values (-167.25 lbs) 
 | Front Outer Load Sensor | 0.000 lbs | sentinel — not equipped |
 | Rear Outer Load Sensor | 0.000 lbs | sentinel — not equipped |
 
-**The "Occupant Detection Status: Child" classification** with an empty seat is a known quirk: with low total load (~3.4 lbs, essentially noise), the classifier defaults to "Child" rather than "Empty" as a safety bias. From OVMS's perspective, this means **"Empty" might never be reported** even when the seat is genuinely unoccupied — the classifier may always say at least "Child". Worth confirming by sitting in the seat with empty hands vs. with weight to see what threshold "Adult" requires.
+**The "Occupant Detection Status: Child" classification** with an empty seat is a known quirk: with low total load (~3.4 lbs, essentially noise), the classifier defaults to "Child" rather than "Empty" as a safety bias. From a downstream-consumer perspective, this means **"Empty" might never be reported** even when the seat is genuinely unoccupied — the classifier may always say at least "Child". Worth confirming by sitting in the seat with empty hands vs. with weight to see what threshold "Adult" requires. Treat "Child" as ambiguous between "small occupant" and "empty".
 
-### Sensor serial numbers (manufacturing provenance, not OVMS-relevant)
+### Sensor serial numbers (manufacturing provenance, low-value telemetry)
 
 Each load sensor exposes 6 fields: production year, month, date, sensor number, line number, serial number. Front Inner sensor was made 2024-04-23, Rear Inner sensor 2024-04-14. Outer sensors all zero (not equipped, confirms hypothesis).
 
-## OVMS mappings
-
-| OVMS metric | Source | Status |
-|---|---|---|
-| `v.e.belts.passenger` (custom) | Passenger Seat Buckle Switch Status | ⬜ DID isolation pending |
-| Custom: passenger occupancy | Occupant Detection Status (Empty / Child / Adult enum) | ⬜ DID isolation pending |
-| Custom: driver seat track position | Driver Seat Position Status | ⬜ DID isolation pending |
-
 ## Open questions
 
-- **Airbag deployment state** — not a Data List parameter, but should be readable as a DTC after deployment. For "has the car been in a crash" detection, OVMS would need to read DTCs from this ECU periodically, OR find a CAN broadcast that signals deployment in real time. Worth a separate investigation.
-- **Whether "Empty" is ever reported** — the empty-seat-classified-as-Child behavior may persist unless the seat sensor is properly calibrated, or it may be design (always classify as at least Child to ensure airbag doesn't deploy at full force on a small occupant). Either way, OVMS should treat "Child" as ambiguous between "small occupant" and "empty".
+- **Airbag deployment state** — not a Data List parameter, but should be readable as a DTC after deployment. For "has the car been in a crash" detection, a client would need to read DTCs from this ECU periodically, OR find a CAN broadcast that signals deployment in real time. Worth a separate investigation.
+- **Whether "Empty" is ever reported** — the empty-seat-classified-as-Child behavior may persist unless the seat sensor is properly calibrated, or it may be design (always classify as at least Child to ensure airbag doesn't deploy at full force on a small occupant).
 - **Driver seat track position enum values** — "Vehicle Back Side" suggests the rear-most slider position. There's likely a "Vehicle Front Side" / "Middle Position" / etc. Worth observing during driver-seat memory recall to enumerate.

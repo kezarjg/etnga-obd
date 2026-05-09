@@ -1,6 +1,6 @@
 # Toyota Techstream — Research Notes for Solterra/bZ4X Reverse Engineering
 
-> Research conducted May 2026. See `ovms-research.md` for the OVMS-side companion. This document focuses on the diagnostic tool itself and what's been done by the broader community.
+> Research conducted May 2026. This document focuses on the diagnostic tool itself and what's been done by the broader community.
 
 ## 1. Current Techstream Version
 
@@ -33,7 +33,7 @@ In **North America**, GTS+ is dealer-facing for new vehicles requiring secure pr
 
 - **Techstream LITE vs full Techstream** ([Toyota TS-Lite FAQ PDF](https://techinfo.toyota.com/techInfoPortal/staticcontent/en/techinfo/html/prelogin/docs/tslfaqtinfo.pdf)): same software binary; LITE uses a J2534-compatible third-party VIM (Mongoose, Bosch CCI, etc.) and a cheaper aftermarket subscription (~$300–500/yr) without the business-registration requirement of full TIS (~$1,200/yr). Both can do ~95%+ of TIS functions on DLC3/J1962 vehicles.
 - **Subaru SSM4** ([PDI Tech Subaru aftermarket](https://security.pditechnologies.com/subaru-tech/)): dealer-level Subaru tool, MY2004–2024 incl. Solterra; the right tool for Subaru-side modules.
-- **Open-source / OVMS-relevant alternatives:** OVMS v3 has a generic DBC vehicle type and a [reverse-engineering toolkit / DBC primer](https://docs.openvehicles.com/en/latest/components/vehicle_dbc/docs/dbc-primer.html). [SavvyCAN](https://www.savvycan.com/) is the standard reverse-engineering UI. CAN-FD support is partial; a comma panda firmware tweak forces the bZ4X back to classical CAN for diagnostic comms.
+- **Open-source alternatives:** [SavvyCAN](https://www.savvycan.com/) is the standard reverse-engineering UI. CAN-FD support in common open-source tooling is partial; a comma panda firmware tweak forces the bZ4X back to classical CAN for diagnostic comms.
 
 ## 5. Community Reverse-Engineering Status (THIS IS THE GOOD PART)
 
@@ -48,7 +48,7 @@ In **North America**, GTS+ is dealer-facing for new vehicles requiring secure pr
 
 - **[Subaru Solterra Forum — PIDs/OBD commands](https://www.solterraforum.com/threads/pids-obd-commands.1172/)** — substantial active thread documenting working PIDs for HV battery SOC, pack voltage/current, individual cell temps, motor torque, coolant temps. **The 2021 RAV4 Prime XGauge config was found to mostly work on Solterra.** This is the single highest-leverage starting point for our discovery work.
 - **[Subaru Solterra Forum — SoC for the traction battery](https://www.solterraforum.com/threads/soc-state-of-charge-for-the-traction-battery.925/)** — community-decoded SOC PID(s) and scaling.
-- **[Subaru Solterra Forum — ScanGauge2 SoC display](https://www.solterraforum.com/threads/displaying-soc-hv-batt-voltage-hv-batt-current-with-scangauge2.979/)** — ScanGauge2-format strings for SoC, pack voltage, pack current. Each ScanGauge2 string is essentially a hex-encoded UDS read with a scaling formula → directly translates to OVMS poll-list entries.
+- **[Subaru Solterra Forum — ScanGauge2 SoC display](https://www.solterraforum.com/threads/displaying-soc-hv-batt-voltage-hv-batt-current-with-scangauge2.979/)** — ScanGauge2-format strings for SoC, pack voltage, pack current. Each ScanGauge2 string is essentially a hex-encoded UDS read with a scaling formula → directly translates to a poll-list entry in any UDS-capable client.
 - **[ABRP added native bZ4X/Solterra OBD live-data telemetry](https://www.bzforums.com/threads/abrp-added-obd-live-data-for-bz4x-today.476/)** — A Better Route Planner now supports it, which means *someone* did the PID work and shipped it. Their app is closed-source but their PID list could potentially be extracted by sniffing what the ABRP OBD adapter polls.
 
 ### DBC file status
@@ -59,13 +59,13 @@ In **North America**, GTS+ is dealer-facing for new vehicles requiring secure pr
 
 ## 6. Implications for our workspace
 
-1. **We're doing genuinely novel work.** No public DBC, no consolidated decoded protocol document, no upstream OVMS module. Our outputs (the per-message YAML in `messages/`, the per-ECU profiles in `ecus/`, the encoded scaling formulas) could be the first public structured documentation of the Solterra protocol — **publishable upstream value** at OVMS, opendbc, or as a standalone repo.
+1. **We're doing genuinely novel work.** No public DBC, no consolidated decoded protocol document. Our outputs (the per-message YAML in `messages/`, the per-ECU profiles in `ecus/`, the encoded scaling formulas) could be the first public structured documentation of the Solterra protocol — **publishable upstream value** at opendbc, OBDb, or as a standalone repo.
 
 2. **Cross-reference the Solterra Forum PID threads early.** Before doing blind discovery on basic signals like SoC, pack voltage, motor RPM, etc., **fetch the community-known PIDs and validate them on this car**. If they work, we save many Techstream sessions; if they don't, we know we have a divergence to investigate.
 
-3. **For OVMS module work, use the RAV4 Prime XGauge config as a cross-check.** The Solterra forum thread suggests the 2021 RAV4 Prime XGauge mostly works on Solterra — confirms the inheritance from RAV4 Prime's Toyota Hybrid System architecture and gives us a known-good signal map to compare to our reverse-engineered findings.
+3. **Use the RAV4 Prime XGauge config as a cross-check.** The Solterra forum thread suggests the 2021 RAV4 Prime XGauge mostly works on Solterra — confirms the inheritance from RAV4 Prime's Toyota Hybrid System architecture and gives us a known-good signal map to compare to our reverse-engineered findings.
 
-4. **Don't bother with SecOC for now.** Active control commands (lock/unlock, climate control via OVMS) are SecOC-gated and aren't crackable on this generation. Stick to read-only diagnostic reads via UDS over OBD-II — that's where all the value is and it's not security-restricted.
+4. **Don't bother with SecOC for now.** Active control commands (lock/unlock, climate control) are SecOC-gated and aren't crackable on this generation. Stick to read-only diagnostic reads via UDS over OBD-II — that's where all the value is and it's not security-restricted.
 
 5. **Verify Techstream version is 18.00.008.** Earlier 18.x will have incomplete bZ4X coverage. Quick check in Techstream → Help → About.
 
@@ -94,8 +94,6 @@ In **North America**, GTS+ is dealer-facing for new vehicles requiring secure pr
 - [Subaru Solterra Forum — PIDs/OBD commands](https://www.solterraforum.com/threads/pids-obd-commands.1172/)
 - [Subaru Solterra Forum — SOC for traction battery](https://www.solterraforum.com/threads/soc-state-of-charge-for-the-traction-battery.925/)
 - [Subaru Solterra Forum — ScanGauge2 SoC display](https://www.solterraforum.com/threads/displaying-soc-hv-batt-voltage-hv-batt-current-with-scangauge2.979/)
-- [Open-Vehicle-Monitoring-System-3 (OVMS)](https://github.com/openvehicles/Open-Vehicle-Monitoring-System-3)
-- [OVMS DBC Primer](https://docs.openvehicles.com/en/latest/components/vehicle_dbc/docs/dbc-primer.html)
 - [SavvyCAN](https://www.savvycan.com/)
 - [commaai/opendbc](https://github.com/commaai/opendbc)
 - [PDI Subaru SSM aftermarket](https://security.pditechnologies.com/subaru-tech/)
