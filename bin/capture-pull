@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# capture-pull <slug>
+#
+# 1. Resolves the latest capture stem on $CAN_HOST matching *_<slug>.log.
+# 2. rsyncs it to ./captures/.
+# 3. Writes a sha256 sidecar.
+# 4. Re-hashes the remote copy; deletes from $CAN_HOST only if hashes match.
+# 5. Scaffolds ./sessions/<stem>.md from a built-in template if missing.
+
+set -euo pipefail
+: "${CAN_HOST:?CAN_HOST must be set to the SSH host of your CAN-capture machine}"
+
+usage() {
+    cat <<EOF >&2
+Usage: $0 <slug>
+
+  Pulls the most recent capture matching *_<slug>.log from $CAN_HOST,
+  writes a sha256 sidecar, deletes from $CAN_HOST after verifying the hash,
+  and scaffolds sessions/<stem>.md if missing.
+EOF
+    exit 1
+}
+
+[[ $# -eq 1 ]] || usage
+slug="$1"
+
+if [[ ! "$slug" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+    echo "Error: slug must start with [a-z0-9] and contain only [a-z0-9-]" >&2
+    exit 1
+fi
+
+# Repo root = parent of bin/.
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="$(dirname "${script_dir}")"
+
+# Resolve latest stem on $CAN_HOST matching the slug.
+stem="$(ssh $CAN_HOST bash -s -- "$slug" <<'REMOTE'
+slug="$1"
+ls -1 ~/captures/ 2>/dev/null \
+    | grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{4}_${slug}\.log$" \
+    | sort | tail -n 1 | sed 's/\.log$//'
+REMOTE
+)"
+
+if [[ -z "${stem}" ]]; then
+    echo "Error: no capture found on $CAN_HOST matching *_${slug}.log" >&2
+    exit 1
+fi
+
+mkdir -p "${root}/captures"
+scp -q "$CAN_HOST:~/captures/${stem}.log" "${root}/captures/"
+
+# Local sha256 sidecar.
+( cd "${root}/captures" && sha256sum "${stem}.log" > "${stem}.log.sha256" )
+local_sha="$(awk '{print $1}' "${root}/captures/${stem}.log.sha256")"
+
+# Re-hash remote and compare.
+remote_sha="$(ssh $CAN_HOST "sha256sum ~/captures/${stem}.log | awk '{print \$1}'")"
+
+if [[ "$local_sha" != "$remote_sha" ]]; then
+    echo "Error: sha256 mismatch — local ${local_sha}, remote ${remote_sha}." >&2
+    echo "  Local copy retained at captures/${stem}.log; remote NOT deleted." >&2
+    exit 1
+fi
+
+ssh $CAN_HOST "rm ~/captures/${stem}.log"
+echo "Verified hash and deleted $CAN_HOST:~/captures/${stem}.log"
+
+# Scaffold session notes if missing.
+notes="${root}/sessions/${stem}.md"
+if [[ ! -f "${notes}" ]]; then
+    mkdir -p "${root}/sessions"
+    cat > "${notes}" <<EOF
+---
+date: $(date --iso-8601=seconds)
+slug: ${slug}
+capture: ../captures/${stem}.log
+capture_sha256: ${local_sha}
+techstream_actions: []
+related_messages: []
+related_ecus: []
+confidence: low
+---
+
+## What I did
+
+## What I saw on the bus
+
+## Hypotheses
+
+## Knowledge backported
+
+## Open questions
+EOF
+    echo "Scaffolded notes: sessions/${stem}.md"
+else
+    echo "Notes already exist: sessions/${stem}.md"
+fi
+
+cat <<EOF
+Pulled: captures/${stem}.log
+  sha256: ${local_sha}
+EOF

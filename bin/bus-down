@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# bus-down
+#
+# Brings can0 down on $CAN_HOST. Idempotent — succeeds if already down.
+
+set -euo pipefail
+: "${CAN_HOST:?CAN_HOST must be set to the SSH host of your CAN-capture machine}"
+
+if [[ $# -ne 0 ]]; then
+    echo "Usage: $0   (no args)" >&2
+    exit 1
+fi
+
+ssh $CAN_HOST bash -s <<'REMOTE'
+state=$(cat /sys/class/net/can0/operstate 2>/dev/null || echo missing)
+if [[ "$state" == "missing" ]]; then
+    echo "can0 does not exist on $CAN_HOST. Nothing to do."
+    exit 0
+fi
+if [[ "$state" != "up" ]]; then
+    echo "can0 already down (state=$state)."
+    exit 0
+fi
+sudo -n ip link set can0 down
+echo "can0 down."
+REMOTE

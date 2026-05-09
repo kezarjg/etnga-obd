@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# capture-start <slug>
+#
+# Starts a candump capture on $CAN_HOST in a tmux session named cap-<slug>.
+# Output goes to ~/captures/YYYY-MM-DD_HHMM_<slug>.log on $CAN_HOST.
+#
+# Pre-flight checks (single SSH round trip):
+#   - can0 is in state UP (otherwise the capture would be silently empty)
+#   - tmux session cap-<slug> does not already exist
+
+set -euo pipefail
+: "${CAN_HOST:?CAN_HOST must be set to the SSH host of your CAN-capture machine}"
+
+usage() {
+    cat <<EOF >&2
+Usage: $0 <slug>
+
+  Starts a candump capture on $CAN_HOST in tmux session 'cap-<slug>'.
+  Output: $CAN_HOST:~/captures/YYYY-MM-DD_HHMM_<slug>.log
+
+  slug must match: ^[a-z0-9][a-z0-9-]*\$
+
+  Requires can0 to already be UP on $CAN_HOST. Run: bin/bus-up
+EOF
+    exit 1
+}
+
+[[ $# -eq 1 ]] || usage
+slug="$1"
+
+if [[ ! "$slug" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+    echo "Error: slug must start with [a-z0-9] and contain only [a-z0-9-]" >&2
+    exit 1
+fi
+
+stem="$(date +%Y-%m-%d_%H%M)_${slug}"
+session="cap-${slug}"
+
+# Combined pre-flight: bus state and tmux-session existence.
+ssh $CAN_HOST bash -s -- "$session" <<'REMOTE'
+session="$1"
+state=$(cat /sys/class/net/can0/operstate 2>/dev/null || echo missing)
+if [[ "$state" != "up" ]]; then
+    echo "Error: can0 on $CAN_HOST is in state '$state', not 'up'." >&2
+    echo "  Run: bin/bus-up" >&2
+    exit 1
+fi
+if tmux has-session -t "$session" 2>/dev/null; then
+    echo "Error: tmux session '$session' already exists on $CAN_HOST." >&2
+    echo "  Stop it first: bin/capture-stop ${session#cap-}" >&2
+    exit 1
+fi
+REMOTE
+
+# Start the capture.
+ssh $CAN_HOST "mkdir -p \$HOME/captures && \
+            tmux new-session -d -s '${session}' \
+              \"candump -tA -L can0 > \$HOME/captures/${stem}.log\""
+
+cat <<EOF
+Started capture: ${stem}
+  Remote log:   $CAN_HOST:~/captures/${stem}.log
+  tmux session: ${session}
+  Stop with:    bin/capture-stop ${slug}
+EOF

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# capture-stop <slug>
+#
+# Cleanly stops the candump capture started by capture-start <slug>:
+#   1. If the tmux session is alive: send Ctrl-C, briefly wait for candump
+#      to flush, then kill the session.
+#   2. If the session is already gone (candump exited on its own): report
+#      and succeed — the work is already done.
+
+set -euo pipefail
+: "${CAN_HOST:?CAN_HOST must be set to the SSH host of your CAN-capture machine}"
+
+usage() {
+    cat <<EOF >&2
+Usage: $0 <slug>
+
+  Stops the tmux capture session 'cap-<slug>' on $CAN_HOST. Idempotent.
+EOF
+    exit 1
+}
+
+[[ $# -eq 1 ]] || usage
+slug="$1"
+
+if [[ ! "$slug" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+    echo "Error: slug must start with [a-z0-9] and contain only [a-z0-9-]" >&2
+    exit 1
+fi
+
+session="cap-${slug}"
+
+ssh $CAN_HOST bash -s -- "$session" <<'REMOTE'
+session="$1"
+if tmux has-session -t "$session" 2>/dev/null; then
+    # Ctrl-C lets candump flush and close the file cleanly.
+    tmux send-keys -t "$session" C-c 2>/dev/null || true
+    sleep 1
+    # kill-session may race with the tmux server shutting itself down once
+    # candump exits and leaves the session empty. Either outcome is fine.
+    tmux kill-session -t "$session" 2>/dev/null || true
+    echo "Stopped capture: $session"
+else
+    echo "Note: tmux session '$session' is not running (already stopped or candump exited)."
+fi
+REMOTE
+
+echo "  Pull with: bin/capture-pull ${slug}"

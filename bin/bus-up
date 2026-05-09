@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# bus-up [bitrate]
+#
+# Brings can0 up on $CAN_HOST at the given bitrate (default 500000).
+# Idempotent: if can0 is already up at the same bitrate, succeeds silently.
+# If up at a different bitrate, refuses (use bin/bus-down first).
+
+set -euo pipefail
+: "${CAN_HOST:?CAN_HOST must be set to the SSH host of your CAN-capture machine}"
+
+bitrate="${1:-500000}"
+
+if [[ ! "$bitrate" =~ ^[0-9]+$ ]]; then
+    echo "Usage: $0 [bitrate]   (default: 500000)" >&2
+    exit 1
+fi
+
+ssh $CAN_HOST bash -s -- "$bitrate" <<'REMOTE'
+bitrate="$1"
+state=$(cat /sys/class/net/can0/operstate 2>/dev/null || echo missing)
+if [[ "$state" == "missing" ]]; then
+    echo "Error: can0 does not exist on $CAN_HOST (USB-CAN adapter unplugged?)." >&2
+    exit 1
+fi
+if [[ "$state" == "up" ]]; then
+    current=$(ip -details link show can0 | sed -n 's/.*bitrate \([0-9]*\).*/\1/p' | head -1)
+    if [[ "$current" == "$bitrate" ]]; then
+        echo "can0 already up at ${bitrate} bps."
+        exit 0
+    fi
+    echo "Error: can0 is up at ${current} bps, you requested ${bitrate}. Run bin/bus-down first." >&2
+    exit 1
+fi
+sudo -n ip link set can0 up type can bitrate "$bitrate"
+echo "can0 up at ${bitrate} bps."
+REMOTE
