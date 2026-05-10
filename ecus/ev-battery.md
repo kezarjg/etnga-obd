@@ -1,5 +1,5 @@
 ---
-name: EV Battery ECU (Toyota official: Battery ECU, k3)
+name: "EV Battery ECU (Toyota official: Battery ECU, k3)"
 diagnostic_request_id: 0x747
 diagnostic_response_id: 0x74F
 toyota_name: Battery ECU
