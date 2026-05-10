@@ -8,9 +8,6 @@ physical_bus: B-CAN
 isotp: mixed-addressing
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 Main Body Data List snapshot (Techstream, Ready mode)
 confidence: high
 ---
 
@@ -99,7 +96,7 @@ The 4 quadrant flags per window give **discrete window position** — closer to 
 | Wiper Motor Control Status | Normal | health |
 | Wiper Intermittent Time Volume | Longest | intermittent setting |
 | Automatic Wiper Wiping Mode (Sensor to Wiper) | Stop | currently no wiping |
-| Rain Sensor | Without | possibly not equipped on this car, or "no rain currently" — ambiguous |
+| Rain Sensor | Without | possibly not equipped on the test vehicle, or "no rain currently" — ambiguous |
 | Rain Sensor Status | Normal | sensor health |
 | Rain Sensor Level Status | Normal |  |
 | Rain Sensor High/Low Temperature Status | Normal |  |
@@ -122,7 +119,7 @@ The solar sensors are **duplicated from HVAC** (`0x7C4` also has Front Left/Righ
 
 | Parameter | Sample | Notes |
 |---|---|---|
-| AHS Function | Not Available | this car doesn't have AHS (Adaptive High-beam System) |
+| AHS Function | Not Available | test vehicle doesn't have AHS (Adaptive High-beam System) |
 | High Beam Headlights (By AHS ECU) | Light OFF | sentinel since AHS not available |
 | Headlight ECU Function | Available | basic headlight control is present |
 | LDM ECU Function | Not Available | no Lane Departure Mitigation as separate ECU |
@@ -172,7 +169,7 @@ Front seat occupancy is on the SRS Airbag ECU (`0x780`), not here.
 | Driver1/2/3 and key ID1-7 Link Status (21 cells) | "With" only at Driver1↔key ID1; rest "Without" | which keys are paired to which driver profiles |
 | Driver1/2/3 and Digital key ID1-7 Link Status (21 cells) | all "Without" | digital-key (phone-as-key) bindings — none paired |
 
-So the user has 1 physical key paired to Driver1, no digital keys paired.
+In this snapshot 1 physical key is paired to Driver1, with no digital keys paired.
 
 ### Memory seats
 
@@ -182,7 +179,7 @@ So the user has 1 physical key paired to Driver1, no digital keys paired.
 | Driver Seat MEM_1/2/3 Memory | Without each | no memory positions saved |
 | MEM Switch No. with Key ID 1-7 | NONE each | no key-to-memory-position bindings |
 
-## Notable findings about THIS car
+## Variant-dependent observations
 
 - **AHS Not Available** — no Adaptive High-beam System.
 - **LDM ECU Not Available** — no Lane Departure Mitigation as a separate module.

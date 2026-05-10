@@ -6,9 +6,6 @@ gateway_sub_target: 0x70
 isotp: mixed-addressing
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 Headlight Control Data List snapshot (Techstream, Ready mode, dusk)
 confidence: high
 ---
 
@@ -39,7 +36,7 @@ Smaller Data List than expected (~25 parameters). Closes the basic "are the head
 | **Cornering Light / Front Side Illuminate Light** | OFF | cornering light state |
 | **Cornering Light / Front Side Illuminate Light (Dim)** | OFF | dimmed cornering state |
 
-Capture context: low beams + clearance lights ON, DRLs OFF — the user is driving at dusk/night with proper lighting active.
+Capture context: low beams + clearance lights ON, DRLs OFF — the vehicle was being driven at dusk/night with proper lighting active.
 
 ### Auto-leveling system (vehicle height tracking)
 
@@ -82,7 +79,7 @@ Used by the AFS for steering-tracking and motion-aware lighting:
 The Data List doesn't expose:
 - **Turn signal state** (left / right) — not findable here
 - **Hazard light flashing state** — Cluster's "Hazard Flasher Switch" tracks the *button*, not the actual flash output
-- **High beam state** — owned by the AHS (Adaptive High-beam System) ECU which on this car reports "Not Available". May be readable via a different parameter or Combination Switch ECU.
+- **High beam state** — owned by the AHS (Adaptive High-beam System) ECU which on the test vehicle reports "Not Available". May be readable via a different parameter or Combination Switch ECU.
 - **Fog light state** — not exposed here
 
 These remaining lighting metrics likely live on the **Combination Switch / Light Control ECU** (often integrated into Main Body or steering column). Worth a future investigation.
@@ -96,4 +93,4 @@ These remaining lighting metrics likely live on the **Combination Switch / Light
 ## Notes
 
 - The "Headlight Control (Sub)" entry at gateway sub-target `0x1E` is presumably a redundant/secondary controller. Its Data List response was too short during the marathon to characterize. Worth a brief look in a future session — likely passes through some of the same parameters as a backup path.
-- The Solterra's headlights are LED with auto-leveling but **no AHS** (Adaptive High-beam System) on this car — confirmed by the AHS Function = "Not Available" parameter on the Main Body ECU.
+- The Solterra's headlights are LED with auto-leveling but **no AHS** (Adaptive High-beam System) on the test vehicle — confirmed by the AHS Function = "Not Available" parameter on the Main Body ECU.

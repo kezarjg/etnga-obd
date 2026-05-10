@@ -9,11 +9,6 @@ isotp: standard
 sessions_observed:
   - default                # 0x01
 techstream_parameter_count: ~75
-sources:
-  - 2026-05-04_0016_health-check
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 HVAC Data List snapshot (Techstream, Ready mode, AC running)
-  - docs/references/abrp-bz4x-test.json
 confidence: high
 ---
 
@@ -21,7 +16,7 @@ confidence: high
 
 Toyota's "Air Conditioner" ECU per Techstream — officially the **F28 Air Conditioning Amplifier Assembly** on the B-CAN bus. Coordinates the entire thermal system: cabin climate, refrigerant cycle (compressor and electric expansion valves), cabin PTC heater, **and the battery chiller path**.
 
-> **Important architectural finding (2026-05-08)**: the **chiller for battery cooling lives on this ECU**, not on the EV Battery ECU. When `0x747`'s `0x1124` Water Cooling routine engages the battery coolant pump, the BMS sends a request to this ECU to open the **Battery Electric Expansion Valve** and route refrigerant through the battery chiller. The +1.0 kW A/C Consumption Power jump we saw during the cooling test was this ECU autonomously responding. The Battery ECU runs the pump; the HVAC ECU runs the refrigerant.
+> **Important architectural finding (2026-05-08)**: the **chiller for battery cooling lives on this ECU**, not on the EV Battery ECU. When `0x747`'s `0x1124` Water Cooling routine engages the battery coolant pump, the BMS sends a request to this ECU to open the **Battery Electric Expansion Valve** and route refrigerant through the battery chiller. The +1.0 kW A/C Consumption Power jump observed during the cooling test was this ECU autonomously responding. The Battery ECU runs the pump; the HVAC ECU runs the refrigerant.
 
 ## Diagnostics
 
@@ -181,8 +176,8 @@ A client can implement **cabin climate preconditioning** alongside battery preco
 
 1. Reading current cabin temperature (`0x1001`) and setpoint (`0x1036`)
 2. Determining heating vs cooling need
-3. Engaging the HV Electric Heater (for cabin warming) or compressor (for cabin cooling) — **but the activation mechanism isn't yet known**. Toyota likely has a "Remote Climate" routine or DID; the EV ECU's "Remote Air Control System" parameter (currently "Unable") is suggestive — if we can trigger that, the HVAC will autonomously run to setpoint without driving each individual valve and pump.
-4. Pairing with battery preconditioning so both are ready when the user reaches a charger / leaves home
+3. Engaging the HV Electric Heater (for cabin warming) or compressor (for cabin cooling) — **but the activation mechanism isn't yet known**. Toyota likely has a "Remote Climate" routine or DID; the EV ECU's "Remote Air Control System" parameter (currently "Unable") is suggestive — triggering that would let the HVAC autonomously run to setpoint without driving each individual valve and pump.
+4. Pairing with battery preconditioning so both are ready when the vehicle reaches a charger or departure time
 
 ## Cross-ECU coordination map
 
@@ -200,9 +195,9 @@ HVAC ECU (0x7C4) ──── compressor + Battery EEV ──→ refrigerant loo
 
 When EV Battery's Cooling Test runs, BMS signals HVAC ECU → HVAC opens Battery EEV (currently 0%) → compressor ramps → chiller path engaged → battery coolant cooled → BMS sees cooler return temp.
 
-For preconditioning **cooling**, our `0x31 01 11 24` on EV Battery is sufficient (BMS coordinates with HVAC autonomously).
+For preconditioning **cooling**, the `0x31 01 11 24` routine on EV Battery is sufficient (BMS coordinates with HVAC autonomously).
 
-For preconditioning **heating**, our `0x2F 28 06 03 00 01 00 01` on EV Battery engages the **battery coolant heater only** — does NOT involve the HVAC ECU's HV Electric Heater (cabin PTC). To warm the cabin too, we'd need a separate HVAC-side command.
+For preconditioning **heating**, the `0x2F 28 06 03 00 01 00 01` IO control on EV Battery engages the **battery coolant heater only** — it does NOT involve the HVAC ECU's HV Electric Heater (cabin PTC). Warming the cabin too requires a separate HVAC-side command.
 
 ## Open questions
 

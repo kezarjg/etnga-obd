@@ -7,9 +7,6 @@ em_reference: F143/F144 (per EM, in passenger kick panel area)
 isotp: mixed-addressing
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 Power Distribution Box Data List snapshot (Techstream, Ready mode, dusk)
 confidence: high
 ---
 
@@ -80,7 +77,7 @@ Small Data List (~22 parameters) — just a handful of relay/fuse-level circuits
 
 | Seat | Source ECU | Parameter |
 |---|---|---|
-| Driver | Cluster `0x7C0` | "Driver Buckle Switch" (we saw "Not Fastened") |
+| Driver | Cluster `0x7C0` | "Driver Buckle Switch" (observed value: "Not Fastened") |
 | Front Passenger | SRS Airbag `0x780` | "Passenger Seat Buckle Switch Status" |
 | Rear Left | **Power Distribution Box `0x750/0x4D`** | "Rear Seat LH Buckle Switch Status" |
 | Rear Center | **Power Distribution Box `0x750/0x4D`** | "Rear Seat Center Buckle Switch Status" |

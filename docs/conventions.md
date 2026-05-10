@@ -1,6 +1,8 @@
 # Conventions
 
-Single source of truth for naming, formatting, and schema decisions in this workspace. Read once, follow always.
+Single source of truth for naming, formatting, and schema decisions used by the contributors to this repo. Documented here as a template for anyone wanting to do similar work.
+
+> **Note**: Session notes and raw captures are kept in a private working repo. The `sessions/` and `captures/` layout described below applies to that working repo; this public repo contains only the per-ECU and per-message digests, not the raw session log.
 
 ## Session stems
 
@@ -45,9 +47,9 @@ Be honest. Most things start `low` and get upgraded.
 
 ## Capture retention
 
-`bin/capture-pull` rsyncs the log to devbox, writes a `.sha256` sidecar, re-hashes the remote copy, and **deletes from the capture host only after the hashes match**. Devbox is the sole long-term copy.
+`bin/capture-pull` rsyncs the log to your archive host, writes a `.sha256` sidecar, re-hashes the remote copy, and **deletes from the capture host only after the hashes match**. The archive host is the sole long-term copy.
 
-Don't keep your own redundant copies on the capture host — disk is often small there. If you need a second copy for safety, take it on devbox.
+Don't keep redundant copies on the capture host — disk is often small there. If a second copy is needed for safety, take it on the archive host.
 
 ## Session notes frontmatter
 
@@ -128,8 +130,40 @@ services_observed:
 ---
 ```
 
+## Per-ECU file frontmatter (`ecus/<name>.md`)
+
+```yaml
+---
+name: HVAC / Air Conditioner (Toyota EM "F28 Air Conditioning Amplifier Assembly")
+diagnostic_request_id: 0x7C4              # for direct OBD-II addressing
+diagnostic_response_id: 0x7CC             # = request + 8 in every observed case
+# For ECUs behind the 0x750 gateway, replace the two above with:
+#   diagnostic_request_id: 0x750
+#   diagnostic_response_id: 0x758
+#   gateway_sub_target: 0x40              # mixed-addressing prefix byte
+# For ECUs that have multiple diagnostic identities (e.g., a main ECU plus
+# a related sub-ECU on a gateway), suffix the keys: diagnostic_request_id_main,
+# diagnostic_request_id_booster, gateway_sub_target_booster, etc.
+toyota_name: Air Conditioner              # how Techstream labels this ECU
+em_reference: F28 Air Conditioning Amplifier Assembly   # Toyota EM (Electrical Manual) component code
+physical_bus: B-CAN                       # internal bus per Toyota EM, if known
+isotp: standard                           # 'standard' or 'mixed-addressing'
+sessions_observed:                        # diagnostic sessions accepted (UDS 0x10 sub-function)
+  - default                               # 0x01
+  - extended                              # 0x03 — required for 0x2C dynamic DIDs
+techstream_parameter_count: ~75           # what Techstream's UI reports as available
+confidence: high                          # high | medium | low — see Confidence levels above
+verified_live_read: true                  # optional — true if a non-Techstream tester has
+                                          #   independently read DIDs from this ECU
+---
+```
+
+Required fields: `name`, the diagnostic ID pair (request/response, plus `gateway_sub_target` if applicable), `isotp`, `confidence`. Everything else is helpful context where known. Files where a field is unknown should omit it rather than carrying a placeholder.
+
+The body of an ECU file typically has these sections (in roughly this order): a one-paragraph intro, **Diagnostics** (table of request/response IDs, transport, observed services), **Functional content** or **DIDs decoded** (per-DID tables with encoding and observed values), **Open questions**, and any platform/cross-ECU notes that don't fit elsewhere.
+
 ## Three rules
 
 1. **Every signal has `confidence` and at least one `sources` entry.** No orphan claims.
-2. **Unknown bytes get explicit `Unknown_bN` signal entries.** Documenting what we don't know yet is as valuable as what we do.
+2. **Unknown bytes get explicit `Unknown_bN` signal entries.** Documenting what's not yet known is as valuable as what is.
 3. **Bit numbering = Intel/little-endian.** No exceptions.

@@ -5,9 +5,6 @@ diagnostic_response_id: 0x7C8
 isotp: standard
 sessions_observed:
   - default
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08_2049_combo-meter-data-list
 confidence: high
 ---
 
@@ -56,9 +53,9 @@ Nonvolatile Memory Status                  (Normal/...)
 Reverse Buzzer Setting                     (Continual/...)
 ```
 
-**Notable absence:** there is **no "Cruising Distance" / "Distance to Empty" / "Range Remaining"** parameter in this Data List. Confirms the EM datalist analysis (`docs/references/em-datalist-findings.md`) — range-to-empty is not exposed as a DID by design. It's either computed in the cluster from internal state (no diagnostic surface) or comes off a CAN broadcast (passive listening required to find).
+**Notable absence:** there is **no "Cruising Distance" / "Distance to Empty" / "Range Remaining"** parameter in this Data List. Cross-referenced against Toyota's full Data List inventory in the EM, range-to-empty is not exposed as a DID by design. It's either computed in the cluster from internal state (no diagnostic surface) or comes off a CAN broadcast (passive listening required to find).
 
-## DIDs decoded (2026-05-08_2049_combo-meter-data-list)
+## DIDs decoded (2026-05-08, Combination Meter Data List)
 
 Mapped via single-parameter isolation in Techstream Data List.
 

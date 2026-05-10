@@ -8,10 +8,6 @@ booster_gateway_sub_target: 0x29
 isotp: standard for 0x7B0; mixed-addressing for 0x750/0x29
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 Brake/EPB Data List snapshot (Techstream, Ready mode)
-  - 2026-05-08 Brake Booster Data List snapshot (Techstream, Ready mode)
 confidence: high
 ---
 

@@ -24,7 +24,7 @@ Each frame on the bus has a CAN ID (11-bit "standard" or 29-bit "extended") and 
 | `0x7E2`–`0x7E7` | tester → ECU 3..8 | Further physical requests |
 | `0x7EA`–`0x7EF` | ECU 3..8 → tester | Further physical responses |
 
-(Pattern: response ID = request ID + 8.) On a Toyota, additional diagnostic ID pairs exist for less common ECUs — discover and document in `ecus/` as we encounter them.
+(Pattern: response ID = request ID + 8.) On a Toyota, additional diagnostic ID pairs exist for less common ECUs — discover and document in `ecus/` when encountered.
 
 ## ISO-TP framing (transport over CAN)
 
@@ -60,12 +60,12 @@ Positive response SID = request SID + `0x40`. Negative response = `0x7F <request
 
 ## Toyota proprietary services
 
-Toyota uses additional SIDs outside the standard UDS range. These will get filled in as we observe them:
+Toyota uses additional SIDs outside the standard UDS range:
 
 - `0xA*` and `0xB*` ranges are commonly Toyota-specific.
 - Some services overlap with old KWP2000 conventions.
 
-When we see an unknown SID, log it in this file with the request/response patterns we observed.
+When an unknown SID shows up, log it in this file with the observed request/response patterns.
 
 ## OBD-II Mode 01 vs UDS
 

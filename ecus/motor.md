@@ -12,9 +12,6 @@ physical_bus: P-CAN-FD
 isotp: standard
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 Motor Generator + Rear Motor Generator Data List snapshots (Techstream, Ready mode, parked)
 confidence: high
 ---
 
@@ -22,7 +19,7 @@ confidence: high
 
 Two physically separate ECUs, one per axle:
 - **Front (`0x724/0x72C`)** = Toyota EM "D9 Front EV Motor Control Inverter"
-- **Rear (`0x705/0x70D`)** = Toyota EM "L4 Rear Transaxle with Motor & Inverter" (AWD only — confirmed present on this car)
+- **Rear (`0x705/0x70D`)** = Toyota EM "L4 Rear Transaxle with Motor & Inverter" (AWD only — confirmed present on an AWD Solterra)
 
 Each is the inverter ECU co-located with its motor — it reads the local resolver, stator temperature, transaxle oil temperature, and the three motor phase currents. The EV ECU (`0x7D2`) supervises both via cross-broadcast.
 

@@ -7,9 +7,6 @@ isotp: mixed-addressing
 sessions_observed:
   - default
   - extended (0x10 03)
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08_2036_psc-data-list
 confidence: high
 ---
 
@@ -19,7 +16,7 @@ Behind the gateway at `0x750` sub-target `0xE9`. Frames address as `750#E9 …` 
 
 **Despite the name, this is the 12V ignition / power-supply state machine, NOT the HV state machine.** Toyota's "Power Source" terminology refers to 12V power distribution (ACC / IGP / IGR buses), not the HV system. PSC handles the push-start logic, decides which 12V buses are powered based on switch state, and reports the relay-monitor feedback. It does **not** own contactor state, HV bus voltage, or ready-to-drive — those live on EV ECU (`0x7D2`) and EV Battery (`0x747`).
 
-> **Why investigated**: PSC was the always-pinged sub-target during gateway-routed ECU connects (every Techstream click probes `0xE9` first), and we hypothesized it was the HV state machine. Wrong — it's a precondition check that the 12V power supply is in a sane state before any other ECU is poked.
+> **Why investigated**: PSC is the always-pinged sub-target during gateway-routed ECU connects (every Techstream click probes `0xE9` first). The initial hypothesis was that it owned the HV state machine — which turned out to be wrong. It's a precondition check that the 12V power supply is in a sane state before any other ECU is poked.
 
 PSC is also the source for the **Total Distance Traveled** (odometer) — distinct from the OBD-II Mode 01 PID `0xA6` odometer served by `0x7E2`.
 
@@ -63,7 +60,7 @@ The Data List uses simple Read-DID polling (no dynamic DIDs). When all 25 parame
 
 | DID | Length | Sample value (idle, P, switches off, all relays on) | Notes |
 |---|---|---|---|
-| `0x0103` | 4 bytes | `02 00 5B A5` | **Confirmed: Total Distance Traveled + Unit.** byte 0 = unit (0x02 = mile, expect 0x01 = km). bytes 1-3 = uint24 BE odometer = `0x005BA5` = 23461 miles ✓. |
+| `0x0103` | 4 bytes | `02 00 61 A8` | **Confirmed: Total Distance Traveled + Unit.** byte 0 = unit (0x02 = mile, expect 0x01 = km). bytes 1-3 = uint24 BE odometer = `0x0061A8` = 25000 miles ✓ (synthetic — real reading redacted). |
 | `0x1001` | 4 bytes | `EA 08 00 00` | **Switches block** (5 booleans pinned via isolation): PSS1, PSS2, PSS3, Steering Unlock Switch, Stop Light Switch. Bit positions not yet pinned — needs physical-input toggle (press brake → SLS flips). |
 | `0x1003` | 4 bytes | `F8 F8 80 80` | **Relay-monitor block** (≥1 confirmed): IGP Relay Circuit (Outside) Monitor. Probably also IGP Inside, IGR Outside, IGR Inside, IGP Hold, ACC Relay. Bit positions not pinned. |
 | `0x1004` | 4 bytes | `40 00 80 80` | Not yet isolated. Likely the "condition / mode" block: Vehicle Running Condition, Power Supply Condition, Shift P Signal Condition, Powertrain Type. |
@@ -95,6 +92,6 @@ The Data List uses simple Read-DID polling (no dynamic DIDs). When all 25 parame
 
 ## Open questions
 
-- Bit positions for the booleans in `0x1001` and `0x1003` — needs a session where the user toggles physical inputs (brake, push start, gear) one at a time with capture running.
+- Bit positions for the booleans in `0x1001` and `0x1003` — needs a session toggling physical inputs (brake, push start, gear) one at a time with capture running.
 - DID-to-parameter mapping for `0x1004`, `0x1005`, `0x1006`, `0x1007`, `0x1008` — only mapped 8 of 25 parameters before pivoting. Worth completing if a future session needs body/ignition state — but per the analysis above, the higher-value telemetry is on other ECUs.
 - Confirm `0x02 = mile` / `0x01 = km` for `0x0103` byte 0 by changing the unit in the cluster settings (or, more practically, just trust the inference).

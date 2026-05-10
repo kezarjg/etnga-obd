@@ -9,12 +9,7 @@ isotp: standard
 sessions_observed:
   - default                # 0x01
   - extended               # 0x03 — required for 0x2C
-techstream_parameter_count: ~250    # per 2026-05-08_2058 snapshot
-sources:
-  - 2026-05-04_0016_health-check
-  - 2026-05-04_0024_ev-battery-connect
-  - 2026-05-08_2058_ev-battery-data-list
-  - docs/references/em-can-topology.md
+techstream_parameter_count: ~250
 confidence: high
 ---
 
@@ -51,11 +46,11 @@ Techstream uses UDS service `0x2C 01` (DynamicallyDefineDataIdentifier By Identi
 - `size` is bytes to copy
 - Multiple source DIDs concatenate into the dynamic DID's response
 
-**Always-bundled fault sidecar:** every dynamic DID definition observed in 2026-05-08 included `0x1F01` byte 1 (1 byte) at the end. Likely a fault/health aggregate that Techstream watches alongside whatever specific signal the user is reading. Worth a direct `0x22 1F 01` read to dump the full surface.
+**Always-bundled fault sidecar:** every dynamic DID definition observed in 2026-05-08 included `0x1F01` byte 1 (1 byte) at the end. Likely a fault/health aggregate that Techstream watches alongside whatever specific signal is being read. Worth a direct `0x22 1F 01` read to dump the full surface.
 
 **Direct DID polling also works** — confirmed by the public ABRP bZ4X/Solterra OBD config (https://abetterrouteplanner.com), which reads source DIDs (e.g., `0x1F9A`, `0x1814`, `0x1D3E`) directly via `0x22` without setting up a dynamic DID. The `0x2C` mechanism is a Techstream optimization (one big poll vs. many small polls); any client can ignore it and read source DIDs directly.
 
-## DIDs decoded (2026-05-08_2058_ev-battery-data-list)
+## DIDs decoded (2026-05-08, EV Battery Data List snapshot)
 
 Mapped via single-parameter Data List isolation. Each row gives the source DID location (revealed by Techstream's `0x2C 01` setup) and the encoding (deduced from the response data + displayed value).
 
@@ -68,7 +63,7 @@ Mapped via single-parameter Data List isolation. Each row gives the source DID l
 | **Per-cell voltage [1..96]** | `0x182E` | 1 (then 3, 5, …) | 2 bytes per cell | uint16 BE × 5/65535 → V (LSB ≈ 76.3 µV) | `0xD19D` = 53661 → 4.0946 V (display 4.09 V) ✓ — full 192-byte block returns all 96 cells in cell order |
 | **Per-sensor cell temperature [1..24]** | `0x1814` | 1 (then 3, 5, …) | 2 bytes per sensor | byte 0 of slot − 50 → °C (1 °C resolution) | `0x42` = 66 → 16 °C (display 60.8 F = 16.0 °C) ✓ — full 48-byte block. byte 1 of each slot purpose TBD. |
 | **Battery coolant temperature** | `0x1848` | 1 | 2 bytes | byte 1 − 50 → °C; byte 0 = sensor voltage × 1/80 V | `0x87 0x44` → 0.5×voltage 1.69 V + 18 °C (display 64.94 F = 18.30 °C, 1.69 V sensor) ✓ |
-| Odometer | `0x0103` | 1 | 4 bytes | byte 0 = unit (0x02 = mile), bytes 1-3 = uint24 BE odometer | `02 00 5B A5` = 23461 mile ✓ — same DID as Power Source Control |
+| Odometer | `0x0103` | 1 | 4 bytes | byte 0 = unit (0x02 = mile), bytes 1-3 = uint24 BE odometer | `02 00 61 A8` = 25000 mile ✓ (synthetic example) — same DID as Power Source Control |
 
 ## Pack-level structure of `0x1F9A`
 
@@ -121,7 +116,7 @@ Among the unmapped, several are high-priority for general telemetry or for SoH d
 - **Distance from DTC Cleared** — useful trip metric
 - **Hybrid/EV Battery SOC just after IG-ON / Maximum / Minimum** — SOC drift indicators
 
-## Active Tests / Routines (2026-05-08_2135_ev-battery-active-cooling)
+## Active Tests / Routines (2026-05-08, Battery active-cooling test)
 
 Active Tests on this ECU use **two distinct UDS mechanisms** depending on the test type:
 
@@ -152,7 +147,7 @@ Techstream **repeats the command every ~4 sec** to refresh the override (shortTe
 
 | Test | Mechanism | RID / Control DID | Notes |
 |---|---|---|---|
-| **Hybrid/EV Battery Water Cooling System** | `0x31` RoutineControl | RID `0x1124` | Per RM: "activate the battery coolant water pump assembly continuously". Engages the **coolant pump only** — the AC chiller engagement we observed (+1.0 kW A/C consumption) was the BMS *autonomously* responding to detected coolant flow. Cooled coolant from 64.94 → 53.42 F (−11.5 F) in ~2 min. Runs until explicit Stop. |
+| **Hybrid/EV Battery Water Cooling System** | `0x31` RoutineControl | RID `0x1124` | Per RM: "activate the battery coolant water pump assembly continuously". Engages the **coolant pump only** — the AC chiller engagement seen during testing (+1.0 kW A/C consumption) was the BMS *autonomously* responding to detected coolant flow. Cooled coolant from 64.94 → 53.42 F (−11.5 F) in ~2 min. Runs until explicit Stop. |
 | **Hybrid/EV Battery Heater Relay** | `0x2F` IOControl | DID `0x2806` | Per RM: "activate the EV battery heater continuously" — drives the BATT HTR NO. 1 relay which powers the **Battery Coolant Heater Assembly (A36)**, not a PTC strapped to the cells. ON: `2F 28 06 03 00 01 00 01`. OFF: `2F 28 06 03 00 00 00 01`. Heater 1 sensor (inside the heater body) hit 153 F local-spot temp in ~2 min ON; thermal lag after OFF. |
 
 ### Component architecture (from RM DTC P091E72/P091E73 inspection steps)
@@ -165,7 +160,7 @@ Battery ECU (k3) ── pin BHRB (k3-11) ──┐
                                                 └── coolant loop
 ```
 
-The heater assembly has **two internal heating elements**, which is why the Data List has "Heater 1 Temperature" specifically — there's almost certainly a "Heater 0 Temperature" reachable via direct DID polling that we didn't expose during the Data List sweep.
+The heater assembly has **two internal heating elements**, which is why the Data List has "Heater 1 Temperature" specifically — there's almost certainly a "Heater 0 Temperature" reachable via direct DID polling that wasn't exposed during the Data List sweep.
 
 Cooling pump path: separately driven by the Battery ECU; physical pump is the "battery coolant water pump assembly" (separate component code, not pinned). When the pump runs, the BMS evaluates pack temperature vs. setpoints and may autonomously engage the AC chiller path on its own initiative.
 
@@ -186,7 +181,7 @@ The Battery ECU enforces preconditions before accepting these tests. If conditio
 - Other Active Tests not being performed
 - Auxiliary 12V battery ≥ 9.5 V
 
-Note the "other Active Tests not being performed" guard for Water Cooling. Toyota's documented expectation is one test at a time; in practice the BMS auto-runs the chiller alongside the pump (we observed this), so the constraint may be enforced only between user-invoked tests, not between user-invoked and BMS-internal.
+Note the "other Active Tests not being performed" guard for Water Cooling. Toyota's documented expectation is one test at a time; in practice the BMS auto-runs the chiller alongside the pump (observed empirically), so the constraint may be enforced only between user-invoked tests, not between user-invoked and BMS-internal.
 
 ### Safety NOTICE from RM (applies to any active-control consumer)
 
@@ -211,6 +206,6 @@ To actively control the battery (e.g., trigger a balance or capacity routine), a
 - **Direction of "Integrated value for Maintenance"** (counts up since service or down to next).
 - **Cell temperature byte 1** — what does the second byte of each `0x1814` slot encode?
 - **`0x1F01` fault sidecar** — what does the full DID contain? Direct read would clarify.
-- **Capacity / SoH via UTILITY routine** — per `em-utility-routines.md`, the Battery Diagnosis routine (`0x1125`?) returns binary Normal/Replace, not %. Re-run after a full drive cycle to see if it gives a useful judgment.
+- **Capacity / SoH via UTILITY routine** — Toyota's Battery Diagnosis routine (`0x1125`?) reportedly returns binary Normal/Replace, not %. Re-run after a full drive cycle to see if it gives a useful judgment.
 - **`0x1D3E` battery capacity DID** (from the public ABRP bZ4X/Solterra OBD config) — Techstream Data List doesn't expose a "Capacity" parameter; was `0x1D3E` a dead-end or is it a routine output? Worth re-investigating.
 - ~~**Where is the actual OBC (A33)?**~~ — **Resolved 2026-05-08**: A33 is `0x745` (the same ECU as Plug-in Charge Control). See `plug-in-charge-control.md`. Toyota integrates session control + OBC hardware + DC-DC into one ECU; the Techstream "Plug-in Control" name disguised the full role.

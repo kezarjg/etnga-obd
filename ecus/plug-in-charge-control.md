@@ -7,11 +7,6 @@ em_reference: A33 (Electric Converter Unit — OBC + DC-DC)
 isotp: standard
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-04_0016_health-check
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08_2058_ev-battery-data-list  # cross-reference
-  - docs/references/abrp-bz4x-test.json   # public ABRP bZ4X/Solterra OBD config — prior art
 confidence: high                           # Techstream-confirmed 2026-05-08
 ---
 
@@ -21,7 +16,7 @@ This ECU **is the On-Board Charger (OBC) plus DC-DC Converter** — Toyota EM co
 
 > **History notes**:
 > - Until 2026-05-08, this ECU was mislabeled "BMS Monitor / Battery Manager" — corrected by the mapping marathon.
-> - Through most of 2026-05-08, it was further mislabeled as "just the charge-session controller" with the OBC presumed to live elsewhere. **Re-corrected late on 2026-05-08** when the user opened Techstream's full Data List and the inventory revealed PFC / DC-DC / charger-I/O parameters that only the OBC hardware ECU could expose. There is no separate OBC ECU — `0x745` is it.
+> - Through most of 2026-05-08, it was further mislabeled as "just the charge-session controller" with the OBC presumed to live elsewhere. **Re-corrected late on 2026-05-08** when the full Techstream Data List inventory revealed PFC / DC-DC / charger-I/O parameters that only the OBC hardware ECU could expose. There is no separate OBC ECU — `0x745` is it.
 
 ## Diagnostics
 
@@ -34,7 +29,7 @@ This ECU **is the On-Board Charger (OBC) plus DC-DC Converter** — Toyota EM co
 | Stored DTCs | none observed |
 | Data List polling | **confirmed 2026-05-09: dynamic DIDs `0xF301` (40 sources, 135-byte body) and `0xF302` (40 sources, 59-byte body)** — same idiom as EV ECU. Also 71 direct-poll DIDs read in parallel. |
 
-## Functional roles (per Data List inventory, 2026-05-08_2058 snapshot)
+## Functional roles (per Data List inventory, 2026-05-08 snapshot)
 
 This ECU bundles several functions a typical Toyota EV would split across multiple modules:
 
@@ -80,7 +75,7 @@ This ECU bundles several functions a typical Toyota EV would split across multip
    - Battery Charging/Power Feeding Permission with Thermal Keep
    - Battery Control Status on Thermal Keeping and Charging
    - Battery Temperature Rising History / Cooling History flags
-8. **Solar option** (bZ4X had a solar roof option; we don't, but parameters exist)
+8. **Solar option** (bZ4X had a solar roof option; not equipped on the test vehicle, but parameters exist)
    - Solar Available Information / Specification / Switching
 
 This breadth confirms `0x745` = the integrated A33 ECU.
@@ -97,14 +92,14 @@ This breadth confirms `0x745` = the integrated A33 ECU.
 
 | Parameter | Value | Significance for telemetry / preconditioning |
 |---|---|---|
-| **Hybrid/EV Battery Temperature when Charging Start** | **32 F (0 °C)** | Logged value from last charge — direct evidence of cold-weather DCFC happening on this car. Strong preconditioning argument. |
+| **Hybrid/EV Battery Temperature when Charging Start** | **32 F (0 °C)** | Logged value from last charge — direct evidence of cold-weather DCFC happening on the test vehicle. Strong preconditioning argument. |
 | Charging History Information | "AC Charging Complete (Full Charge)" | Last-charge state is queryable as an enum |
 | Total Number of AC Charging | 66 | Lifetime AC charge counter |
 | AC Charging Total Time | 18598 min (~310 h) | Lifetime AC charge time |
 | Hybrid/EV Battery SOC (DC Charger Display) | 95 % | The biased SOC presented to DCFC stations (vs EV Battery's 89 % "real" SOC) |
 | Hybrid/EV Battery SOC (Meter Display) | 95 % | What the dashboard cluster displays |
 | Hybrid/EV Battery Control Status on Thermal Keeping and Charging | "Unoperated" | Confirms there *is* a "Thermal Keep" feature in Toyota's logic; currently inactive. May be related to scheduled charge / pre-departure thermal prep. |
-| Charge Amount Upper Limit Setting | "Full" | The user-configurable charge-target SOC Customize Parameter we wanted to find — exposed on this ECU. DID not yet pinned. |
+| Charge Amount Upper Limit Setting | "Full" | The user-configurable charge-target SOC Customize Parameter — exposed on this ECU. DID not yet pinned. |
 | HV/EV Battery Total Voltage | 392.0 V | Same as EV Battery's `0x1F9A` reading |
 | Charging Voltage for Hybrid/EV Battery | 0.0 V | Idle (not charging) |
 | Hybrid/EV Battery Charging Power | -0.94 kW | Negative = battery feeding aux loads at idle |
@@ -118,7 +113,7 @@ This breadth confirms `0x745` = the integrated A33 ECU.
 
 ## Observed-but-unidentified DIDs (from Health Check)
 
-From `2026-05-04_0016_health-check` Toyota Health Check polled: `0x1C00` (supported-DID list per Toyota convention), `0x1CB4-B7`, `0x1CBA`, `0x1CC6/C8/C9/CD`, `0x1CED/F1/F3/F5/F6/F7`, `0x1D00`, `0x1D41-D44`, `0x1D6B/D/E`, `0xF181` (ApplicationSoftwareIdentification).
+During a Toyota Health Check (Techstream's full bus fan-out), this ECU was polled for: `0x1C00` (supported-DID list per Toyota convention), `0x1CB4-B7`, `0x1CBA`, `0x1CC6/C8/C9/CD`, `0x1CED/F1/F3/F5/F6/F7`, `0x1D00`, `0x1D41-D44`, `0x1D6B/D/E`, `0xF181` (ApplicationSoftwareIdentification).
 
 The 247-byte responses on `0x1D41-D44` likely correspond to charge-session log records or per-session history (the Data List has many "history" parameters like "Connector Unlock History during Charging", "AC Charging Input Minimum Voltage History", "Power Limit Operation History", etc.). These are good targets for a future direct DID dump.
 
@@ -142,8 +137,8 @@ The 247-byte responses on `0x1D41-D44` likely correspond to charge-session log r
 
 This ECU has the **logged record of cold-weather charging** (32 F start temp from last charge). For preconditioning logic, this means:
 
-1. Historic charging conditions can be **tracked** to know whether preconditioning is even worth the energy (if the user always plugs in warm, no need).
-2. **"Thermal Keep" parameters** (currently "Unoperated") suggest Toyota has *some* preconditioning infrastructure already in firmware — worth investigating whether triggering it via a known UDS command would be cleaner than driving the heater/pump tests directly. May be a routine ID we haven't found.
+1. Historic charging conditions can be **tracked** to know whether preconditioning is even worth the energy (consistently warm plug-in conditions = no need).
+2. **"Thermal Keep" parameters** (currently "Unoperated") suggest Toyota has *some* preconditioning infrastructure already in firmware — worth investigating whether triggering it via a known UDS command would be cleaner than driving the heater/pump tests directly. May be an undiscovered routine ID.
 3. The **biased "DC Charger Display SOC"** (95 % vs 89 % real) is what DCFC stations see for charging negotiation — important to understand for any future DCFC-related telemetry.
 
 ## Open questions
@@ -170,7 +165,7 @@ The 2026-05-09 charge-cycle capture (IG-OFF → L2 plug-in → AC charge initiat
 | `0x1656` | 5 | small slow drift during charging — likely a counter |
 | `0x16A5` | 4 | bytes 1-2 = **HV/EV Battery Total Voltage** u16 BE × 1 V/LSB (= 392 during charging, matches baseline) ✓ |
 | `0x1699` | 4 | constant `00 09 3a 80` — config sentinel |
-| `0x0103` | 4 | **Odometer + unit** (same as EV ECU; `0x02 00 5B AE` = unit `mile` + 23470 mile) ✓ |
+| `0x0103` | 4 | **Odometer + unit** (same as EV ECU; `0x02 00 61 B1` = unit `mile` + 25009 mile, synthetic) ✓ |
 | `0x1612` | 4 | bytes 1-2 grew from 0 to 9960 during charging — **Charging Elapsed Time** candidate |
 | `0x173F`, `0x1740` | 4 each | Coolant valve drive position pair (TBD scale) |
 | `0x1F42` | 2 | (variable; on EV ECU = BATT V × 0.001 V; here had different range — TBD) |
@@ -204,4 +199,4 @@ Remaining ~60 direct-poll DIDs returned ambiguous values (`0x00`, `0x01`, `0xFF`
 
 ### Authoritative parameter dictionary
 
-All 237 OBC parameter names + units + 125 enum tables extracted from the `Short Level 2 charging.TSE` recording — see `sessions/2026-05-09-pid-mapping/tse_charging.json` and `findings_obc_charging.md`. **All charging state machines are now in the project's authoritative form** (Charger Operation Status, AC Charging Operation Status, Charging History Information, DC Charging Control Status (CCS), HLC Communication Sequence Status, Charging Lid Opening and Closing Status, Charging Connector Lock Pin Status, etc.).
+A Techstream `.TSE` Live Data recording of an L2 charge cycle yields the full set of 237 OBC parameter names + units + 125 enum tables (Charger Operation Status, AC Charging Operation Status, Charging History Information, DC Charging Control Status (CCS), HLC Communication Sequence Status, Charging Lid Opening and Closing Status, Charging Connector Lock Pin Status, etc.). Capturing during a real charge session is the practical way to enumerate the charging state machines in their authoritative form.

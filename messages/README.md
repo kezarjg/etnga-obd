@@ -8,5 +8,3 @@ Two flavours, both with YAML frontmatter:
 - **Broadcast IDs** (`broadcast/`): periodic single-frame messages with decoded signals. The schema here is what eventually becomes a DBC file.
 
 Frontmatter schemas: see `../docs/conventions.md`.
-
-**Rule:** every claim in these files must cite at least one session stem in its `sources` field. No orphan claims.

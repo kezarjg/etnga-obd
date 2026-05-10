@@ -7,13 +7,8 @@ isotp: mixed-addressing            # ISO 15765-2 mixed addressing (1 address-ext
 sessions_observed:
   - default                        # 0x01
   - extended                       # 0x03
-sources:
-  - 2026-05-04_0016_health-check   # observed during Health Check fan-out
-  - 2026-05-04_0049_tpms-connect   # full identification + pressure decoding
-  - 2026-05-04_0103_tpms-tire-temps # temperature + corner-position decoding
-  - 2026-05-04_0111_live-read      # end-to-end live read direct from the CAN bus, no Techstream
 confidence: high
-verified_live_read: true            # the capture host has successfully queried this ECU and decoded the response
+verified_live_read: true            # confirmed by reading these DIDs directly from the CAN bus, without Techstream
 ---
 
 # Tire Pressure Monitor ECU (TPMS)
@@ -63,7 +58,7 @@ To know "what's the FL tire's pressure?", you must:
 1. Read `0x2021` → find which slot has corner enum `0x01` (FL).
 2. Read `0x1005` → take the pressure value at that same slot's position.
 
-On the user's car (snapshot from `tpms-tire-temps` session):
+Observed slot-to-corner mapping on a 2024 Solterra:
 
 | Slot | Corner (`0x2021`) | Pressure (`0x1005`) | Temperature (`0x1004`) |
 |---:|---|--:|--:|
@@ -94,7 +89,7 @@ Each uint16 = `[status_byte][raw_pressure_byte]`. High byte = status (always `0x
 - **1 LSB = 0.25 PSI** (PSI-native, NOT kPa)
 - **Offset: −7.35 PSI** (= ½ atmosphere; raw `0` ↔ "Initial Value" in Techstream)
 
-Verified to **0 PSI rounding error** across all 5 displayed values. See `sessions/2026-05-04_0049_tpms-connect.md`.
+Verified to **0 PSI rounding error** across all 5 displayed values.
 
 ### `0x1004` — All Tire Temperatures (HIGH CONFIDENCE)
 
@@ -132,7 +127,7 @@ This is the standard SAE convention (FL=1, FR=2, RL=3, RR=4) and is likely consi
 
 ### Other supported DIDs (not yet decoded)
 
-The capture caught Techstream briefly scanning many DIDs at low rates (~11 polls each) when the user paged through Data List sections. All received responses, indicating they're supported. Categories observed:
+The capture caught Techstream briefly scanning many DIDs at low rates (~11 polls each) while paging through Data List sections. All received responses, indicating they're supported. Categories observed:
 
 - **`0x10XX` range** (~30 distinct): probably the "tire data" category. Adjacent to confirmed `0x1004`/`0x1005`. Likely contains sensor IDs, batteries, signal strengths.
   - Specific blocks: `0x1002, 0x1003, 0x100E, 0x100F` (small group near pressure/temp); `0x1022–0x1027`, `0x1030–0x103F`, `0x1040–0x1044` (possible per-sensor detail blocks); `0x1050–0x105B` (12 DIDs — could be 3 per sensor × 4 sensors).
@@ -142,7 +137,7 @@ The capture caught Techstream briefly scanning many DIDs at low rates (~11 polls
 
 To extract the full list from the capture file:
 ```bash
-grep -E ' can0 750#2A03' captures/2026-05-04_0103_tpms-tire-temps.log \
+grep -E ' can0 750#2A03' "$capture_log" \
   | grep -oE '22[0-9A-F]{4}' | sort -u
 ```
 
@@ -191,7 +186,7 @@ out = out[:total]
 
 The reassembled payload starts with `62 ${DID_HI} ${DID_LO}` (positive ReadDataByIdentifier response + DID echo); the rest is the DID's data, decoded per the formulas above.
 
-**Note:** `bin/tpms-read` was prototyped during this session but **not** baked into the workspace — the script lived only in the SSH heredoc. If TPMS reads become a regular workflow, promote it to `bin/tpms-read` (and consider similar helpers for other decoded ECUs/DIDs).
+**Note:** the snippet above is a prototype, not packaged into `bin/`. If TPMS reads become a regular workflow, lift it into a helper script (and consider similar helpers for other decoded ECUs/DIDs).
 
 ## Open questions
 

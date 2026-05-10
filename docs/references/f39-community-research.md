@@ -4,7 +4,7 @@
 
 ## Bottom line
 
-**Nobody has publicly documented F39 on the bZ4X / Solterra.** Searches across bZForums, Solterra Forum, Reddit, optskug, openinverter, comma.ai, opendbc, and YouTube returned zero direct hits. **The user would be the first to publish.**
+**Nobody has publicly documented F39 on the bZ4X / Solterra.** Searches across bZForums, Solterra Forum, Reddit, optskug, openinverter, comma.ai, opendbc, and YouTube returned zero direct hits. Anyone publishing concrete F39 capture data would be the first.
 
 But — the **same connector body and architectural pattern exists on Toyota GR Corolla and GR Yaris** (where it's labeled **H62**, same Toyota housing P/N **90980-12936**, same "Bus Buffer ECU" role), and the GR community is actively using it as a CAN logger tap. That gives strong extrapolation ground for parts and behavior.
 
@@ -31,7 +31,7 @@ Sources:
 GR Corolla owners describe H62 as *"an empty plug Toyota generously left us by the RH footwell"*. That matches:
 
 - The bZ4X EM placing the Network Gateway ECU in the **ECU Integration Box RH** (passenger-side under-dash)
-- The bZ4X Repair Manual's gateway-removal procedure (which we previously read) calling for removal of the right kick panel + lower instrument panel to access the gateway
+- The bZ4X Repair Manual's gateway-removal procedure calling for removal of the right kick panel + lower instrument panel to access the gateway
 
 **Practical: F39 should be a small 2-pin pigtail taped to the harness in the passenger-side footwell area, near the ECU Integration Box.** Consistent with what we'd already inferred from the EM, now confirmed by the analog on adjacent platforms.
 
@@ -92,13 +92,13 @@ Source: https://www.solterraforum.com/threads/dashcam-powered-mirror-adapter-out
 
 Both directions of this finding are valuable:
 
-**The negative (no community work)** means we'd be doing **genuinely novel reverse-engineering** if we tap F39 and capture its traffic. Both bZForums and Solterra Forum have active interest in CAN tap topics; a documented F39 install with traffic captures would be a notable contribution.
+**The negative (no community work)** means tapping F39 and capturing its traffic would be **genuinely novel reverse-engineering**. Both bZForums and Solterra Forum have active interest in CAN tap topics; a documented F39 install with traffic captures would be a notable contribution.
 
-**The positive (parts well-known on GR Corolla)** means **we can source the mating connector and pigtail today** without waiting — the Ballenger / Toyota-dealer parts work because the Toyota housing P/N is identical platform-to-platform.
+**The positive (parts well-known on GR Corolla)** means **the mating connector and pigtail are sourceable today** without waiting — the Ballenger / Toyota-dealer parts work because the Toyota housing P/N is identical platform-to-platform.
 
 ## Recommendation
 
-When the user is next at the car (planned: future session), do a **single combined experiment**:
+A **single combined experiment** that resolves all the open questions in the table above:
 
 1. Pop the passenger kick panel
 2. Locate F39 (small 2-pin connector with cap, near the ECU Integration Box)

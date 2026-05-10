@@ -10,11 +10,6 @@ sessions_observed:
   - default                # 0x01
   - extended               # 0x03 — Techstream switches into this for 0x2C
 techstream_parameter_count: 375     # what Techstream's UI reports as available
-sources:
-  - 2026-05-03_2357_techstream-connect
-  - 2026-05-08_2058_ev-battery-data-list  # cross-reference (this ECU's parameters duplicate some)
-  - 2026-05-08 EV ECU full Data List snapshot (Techstream, Ready mode)
-  - docs/references/em-can-topology.md   # confirms F45 = this ECU
 confidence: high
 ---
 
@@ -22,7 +17,7 @@ confidence: high
 
 Per the Toyota Electrical Manual (EM39J0U), this ECU is officially **F45 — Hybrid Vehicle Control ECU**, sitting on the **P-CAN-FD bus**. Despite the "Hybrid" name, this is the main vehicle supervisor on the all-electric Solterra/bZ4X — the bZ4X platform was derived from Toyota's hybrid architecture and retains the legacy ECU naming.
 
-When the user opens "EV ECU" in Techstream, traffic flows on the OBD-II `0x7D2/0x7DA` ID pair (proxied through the F38 Network Gateway from P-CAN-FD).
+When "EV ECU" is opened in Techstream, traffic flows on the OBD-II `0x7D2/0x7DA` ID pair (proxied through the F38 Network Gateway from P-CAN-FD).
 
 ## Diagnostics
 
@@ -108,9 +103,9 @@ Observed groupings in the supported source DID space — useful for guessing wha
 
 ## Decoding plan going forward
 
-1. **Per-item isolation captures**: enable one Data List item at a time in Techstream → capture the `2C 01 F3 01` define → record the source-DID + position + length triple → record the meaning the user reads off the screen. Each session unlocks 1 item.
-2. **Range bombing**: enumerate source DIDs by polling them directly (without going through Techstream). Could be done from the capture host with `cansend` once we're ready to actively probe rather than passively listen.
-3. **Big-payload decomposition**: source DIDs like `0x15EA` (35 bytes) probably hold many signals. Once we capture a full poll response, we can correlate observed bytes with values displayed in Techstream when those packed items are isolated.
+1. **Per-item isolation captures**: enable one Data List item at a time in Techstream → capture the `2C 01 F3 01` define → record the source-DID + position + length triple → record the parameter label off the Techstream screen. Each session unlocks 1 item.
+2. **Range bombing**: enumerate source DIDs by polling them directly (without going through Techstream). Doable from any tester host with `cansend` once active probing is acceptable.
+3. **Big-payload decomposition**: source DIDs like `0x15EA` (35 bytes) probably hold many signals. With a full poll response captured, observed bytes can be correlated with values displayed in Techstream when those packed items are isolated.
 
 ## Functional roles (per Data List inventory, 2026-05-08 snapshot)
 
@@ -228,7 +223,7 @@ This is the single biggest novel chunk vs. what the cluster exposes. The EV ECU 
 | Number of Long Term Leaving with IG OFF | 0 | sleep events counted |
 | Auxiliary Battery Integrated Thermal Load | 914760 | thermal stress accumulator (proprietary unit) |
 | Auxiliary Battery Average Current during IG OFF (1st…5th trip before) | -0.022 to -0.125 A | sleep-current per recent trip |
-| Total Distance Up to (1st…5th) Trip before | 23318/23311/23311/23308/23304 | rolling odometer history |
+| Total Distance Up to (1st…5th) Trip before | 24850/24843/24843/24840/24836 | rolling odometer history (synthetic — real readings redacted) |
 | IG ON Time / Ready ON Time (1st…5th trip) | 16/272/6/8/28 min | per-trip duration history |
 
 **This is comprehensive 12V battery health data already computed by the car** — any client can expose it directly without re-deriving. Good "battery health" UI page material.
@@ -274,7 +269,7 @@ The EV ECU sees and forwards AC/DC charging relay statuses, permission signals, 
 - **Why "Drive Mode = HV Mode" on a BEV** — Toyota's enum was carried over from the hybrid platform. The bZ4X is on eTNGA shared with PHEVs; the BEV variant probably reports `HV Mode` as a stand-in for "powered by the HV traction battery". Just a quirk to note.
 - **Motor torque sign convention** — at idle, "Motor Torque = -0.13 Nm" (slightly negative). Likely sign convention is +ve = drive, −ve = regen. Confirm during a drive cycle.
 - **Single vs dual DC/DC architecture** — this ECU has the main DC/DC; `0x745` has the "Sub DC/DC Converter for Charging". Solterra has two physical DC/DC modules? Or two driver paths to one module? Worth checking against Toyota EM wiring diagrams.
-- **Anomaly counters as DID surface** — these are clearly stored persistently. If we read the underlying source DIDs we may find a "factory reset" routine ID that resets them. Useful or dangerous (clearing drives diagnostics).
+- **Anomaly counters as DID surface** — these are clearly stored persistently. Reading the underlying source DIDs may reveal a "factory reset" routine ID that resets them. Useful or dangerous (clearing drives diagnostics).
 
 ## Source DID inventory cross-reference
 
@@ -309,12 +304,12 @@ The 2026-05-09 PID-mapping session captured the full F301/F302 dynamic-DID defin
 | `0x110E` | 4 | byte 2 = HV Battery Water Pump Speed u8 rpm |
 | `0x0103` | 4 | **Odometer + unit**: byte 1 = unit (0x02 = mile), bytes 2-4 = u24 BE odometer |
 | `0x1807` | 4 | u32 — likely cumulative timer/counter |
-| `0x107D`, `0x1069`, `0x106A`, `0x110B`, `0x1F42` | 4, 4, 4, 4, 2 | mostly zeros / sentinels in this car's state. `0x1F42` = **BATT Voltage** u16 BE × 0.001 V |
+| `0x107D`, `0x1069`, `0x106A`, `0x110B`, `0x1F42` | 4, 4, 4, 4, 2 | mostly zeros / sentinels in the captured state. `0x1F42` = **BATT Voltage** u16 BE × 0.001 V |
 | `0x10B5`, `0x10B1` | 2, 2 | **Accelerator Position Sensor No.1 / No.2 voltage %** (paired, varied during drive) |
 | `0x1118` | (in F302) | **Steering Angle**: (raw − `0x8000`) × 1.25 deg ✓ |
 | `0x1061` | 2 | **byte 1 = Shift Position** (P=0, R=2, N=4, D=6, B=8) ✓ ; byte 2 = related shift flag |
 | `0x10D6` | 2 | candidate Aux Battery Current (snapshot-time value matched) |
-| (15+ more sources) | various | named in `tse_recording.json`; some constants, some sentinels, some still-pending labels |
+| (15+ more sources) | various | some constants, some sentinels, some still-pending labels |
 
 ### F302 (40 sources, 72-byte response body)
 
@@ -334,4 +329,4 @@ The 2026-05-09 PID-mapping session captured the full F301/F302 dynamic-DID defin
 
 ### Authoritative parameter dictionary
 
-All 397 EV-ECU parameter names + units + 182 enum tables extracted from the 2026-05-09 TSE recording — see `sessions/2026-05-09-pid-mapping/tse_recording.json` and `findings_tse_recording.md`.
+A Techstream `.TSE` Live Data recording of a drive cycle yields the full set of 397 EV-ECU parameter names + units + 182 enum tables. Capturing during a real drive is the practical way to enumerate the parameter dictionary; the per-tick block format inside `.TSE` files is parseable as a tick-stream of fixed-size frames separated by sync markers.

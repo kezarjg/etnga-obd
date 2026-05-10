@@ -6,9 +6,6 @@ gateway_sub_target: 0xC7
 isotp: mixed-addressing
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 Telematics Data List snapshot (Techstream, Ready mode)
 confidence: high
 ---
 
@@ -29,32 +26,32 @@ Behind the gateway at `0x750` sub-target `0xC7`. Toyota's Data Communication Mod
 
 ## Functional content (per Data List, 2026-05-08)
 
-### Cellular modem identifiers — **PII / car-identifying — keep out of public docs**
+### Cellular modem identifiers — **PII / car-identifying — do not commit**
 
-The actual values for this car are stored in workspace-only context (treat like VIN in `CAR.md`):
+Treat IMEI/MSISDN/ICCID like the VIN: keep them local, do not commit them. Observed-format and example values below are from one US-market 2024 Solterra and may differ on other markets/model years.
 
-| Parameter | What it is | Format / value (redacted in public docs) |
+| Parameter | What it is | Format / value |
 |---|---|---|
 | IMEI | Modem hardware identifier | 15-digit decimal, ITU-T E.212 — readable here as a single field |
 | MSISDN | The DCM's embedded SIM phone number | 10-digit US format |
 | ICCID | SIM card serial number | 20-digit, split as ICCID(High) and ICCID(Low) — concatenate for full ICCID |
-| Software Version High | Modem firmware version | "172.0.6a00" on this car (May 2026) |
-| Software Version Low | (paired with High) | empty on this car |
+| Software Version High | Modem firmware version | "172.0.6a00" observed on a US-market 2024 Solterra (May 2026) |
+| Software Version Low | (paired with High) | empty in the observed sample |
 | PLMN(MCC) | Mobile country code | 310 (USA) |
-| PLMN(MNC) | Mobile network code | 410 (AT&T) — confirms US T-Mobile/AT&T cellular for this car |
+| PLMN(MNC) | Mobile network code | 410 (AT&T) — observed on a US-market 2024 Solterra |
 
 ### Toyota Connected service activation
 
 | Parameter | Sample | Notes |
 |---|---|---|
-| Telematics Activation Status | Active | Toyota Connected services are active on this car |
+| Telematics Activation Status | Active | Toyota Connected services are active on the test vehicle |
 | Communication Status with TSC | Complete | Toyota Service Center / Smart Center connection healthy |
 | Communication Pausing State | Pausing | DCM currently in low-power pause state (probably normal at idle) |
 | Brand TOYOTA | No | Subaru-rebranding — Solterra reports as not-Toyota even though it uses Toyota's DCM |
 
 ### Per-feature enable/disable flags (~35 features)
 
-These map to user-toggle settings in Toyota Connected. Currently enabled on this car:
+These map to user-toggle settings in Toyota Connected. Enabled on the test vehicle:
 
 - OTA Reprogramming
 - Remote Service Function, Vehicle State Notification, Remote Warning
@@ -112,11 +109,11 @@ Almost nothing — this ECU exposes service configuration, not real-time vehicle
 | Telematics activation status | Telematics Activation Status | one-time read for "is Toyota Connected active" |
 | Cellular network identifiers | IMEI / MSISDN / ICCID | one-time read for device provenance — informational only for any external integration with its own connectivity |
 
-## Notable absences (things I expected but didn't find)
+## Notable absences
 
 - **Cell signal strength (RSSI / RSRP)** — the modem clearly knows this; it's just not exposed via this Data List
 - **Cell network state** (registered / connected / transmitting / idle) — not visible
-- **Last successful TSC connection time** — would be useful for diagnosing "why didn't my remote command go through"
+- **Last successful TSC connection time** — would be useful for diagnosing why a remote command didn't go through
 - **GPS position** — confirmed not on diagnostic surface (cross-checked with Navigation ECU's empty Data List too)
 - **Currently active digital key sessions** — Main Body has the *paired* digital keys; this would be the *currently authenticated* sessions
 
@@ -128,4 +125,4 @@ Almost nothing — this ECU exposes service configuration, not real-time vehicle
 
 ## Privacy note
 
-The IMEI / MSISDN / ICCID values **identify this specific car**. Same standard as the VIN in `CAR.md` — workspace-internal, not in any committed public artifact.
+The IMEI / MSISDN / ICCID values **identify a specific vehicle**. Treat them like the VIN — keep local, do not commit them to any public artifact.

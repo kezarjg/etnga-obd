@@ -5,10 +5,6 @@ diagnostic_response_id: 0x788
 isotp: standard
 sessions_observed:
   - default                # 0x01
-sources:
-  - 2026-05-04_0016_health-check
-  - 2026-05-08_1955_ecu-mapping-marathon
-  - 2026-05-08 SRS Airbag Data List snapshot (Techstream, Ready mode)
 confidence: high
 ---
 
@@ -70,7 +66,7 @@ Three calibration epochs are stored per sensor (Front Inner / Rear Inner / Front
 - **Vehicle Plant Zero Point** — calibrated at the car assembly plant
 - **Dealer Zero Point** — calibrated post-delivery (e.g. after seat removal/replacement)
 
-Both Outer sensors show "Not Learn Recorded" with sentinel values (-167.25 lbs) — likely **not equipped on this car** (the Solterra may use a 2-sensor instead of 4-sensor passenger seat).
+Both Outer sensors show "Not Learn Recorded" with sentinel values (-167.25 lbs) — likely **not equipped on the test vehicle** (the Solterra may use a 2-sensor instead of 4-sensor passenger seat).
 
 ### Live load sensor values
 

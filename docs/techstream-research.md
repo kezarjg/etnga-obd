@@ -8,7 +8,7 @@
 
 No 18.10 / 18.20 / 19.x has been released to the public Techstream channel since. Bootleg redistributors (UpdateStar, Autosofts) re-bundle the same MSI under "2025/2026" labels but the binary hasn't changed.
 
-**v18.00.008 is the first Techstream that explicitly lists Toyota bZ4X 2024 / Subaru Solterra in its model coverage.** If this workspace's Techstream installation is on any earlier 18.x point release, upgrade before further sessions — coverage will be incomplete.
+**v18.00.008 is the first Techstream that explicitly lists Toyota bZ4X 2024 / Subaru Solterra in its model coverage.** Any earlier 18.x point release will have incomplete coverage and should be upgraded before further sessions.
 
 ## 2. Successor Product Status
 
@@ -46,7 +46,7 @@ In **North America**, GTS+ is dealer-facing for new vehicles requiring secure pr
 
 ### Active community PID work (HIGH RELEVANCE TO OUR WORK)
 
-- **[Subaru Solterra Forum — PIDs/OBD commands](https://www.solterraforum.com/threads/pids-obd-commands.1172/)** — substantial active thread documenting working PIDs for HV battery SOC, pack voltage/current, individual cell temps, motor torque, coolant temps. **The 2021 RAV4 Prime XGauge config was found to mostly work on Solterra.** This is the single highest-leverage starting point for our discovery work.
+- **[Subaru Solterra Forum — PIDs/OBD commands](https://www.solterraforum.com/threads/pids-obd-commands.1172/)** — substantial active thread documenting working PIDs for HV battery SOC, pack voltage/current, individual cell temps, motor torque, coolant temps. **The 2021 RAV4 Prime XGauge config was found to mostly work on Solterra.** This is the single highest-leverage starting point for new discovery work.
 - **[Subaru Solterra Forum — SoC for the traction battery](https://www.solterraforum.com/threads/soc-state-of-charge-for-the-traction-battery.925/)** — community-decoded SOC PID(s) and scaling.
 - **[Subaru Solterra Forum — ScanGauge2 SoC display](https://www.solterraforum.com/threads/displaying-soc-hv-batt-voltage-hv-batt-current-with-scangauge2.979/)** — ScanGauge2-format strings for SoC, pack voltage, pack current. Each ScanGauge2 string is essentially a hex-encoded UDS read with a scaling formula → directly translates to a poll-list entry in any UDS-capable client.
 - **[ABRP added native bZ4X/Solterra OBD live-data telemetry](https://www.bzforums.com/threads/abrp-added-obd-live-data-for-bz4x-today.476/)** — A Better Route Planner now supports it, which means *someone* did the PID work and shipped it. Their app is closed-source but their PID list could potentially be extracted by sniffing what the ABRP OBD adapter polls.
@@ -57,25 +57,25 @@ In **North America**, GTS+ is dealer-facing for new vehicles requiring secure pr
 - PIDs are circulating in forum posts, **not DBC form**.
 - [Project Gus's Kona writeup](https://www.projectgus.com/2023/10/kona-can-decoding/) is referenced as a methodology template by Solterra hackers but is for a different platform.
 
-## 6. Implications for our workspace
+## 6. Implications for reverse-engineering work
 
-1. **We're doing genuinely novel work.** No public DBC, no consolidated decoded protocol document. Our outputs (the per-message YAML in `messages/`, the per-ECU profiles in `ecus/`, the encoded scaling formulas) could be the first public structured documentation of the Solterra protocol — **publishable upstream value** at opendbc, OBDb, or as a standalone repo.
+1. **There is genuinely novel work to do.** No public DBC, no consolidated decoded protocol document. Per-message YAML in `messages/`, per-ECU profiles in `ecus/`, and encoded scaling formulas could be the first public structured documentation of the Solterra protocol — **publishable upstream value** at opendbc, OBDb, or as a standalone repo.
 
-2. **Cross-reference the Solterra Forum PID threads early.** Before doing blind discovery on basic signals like SoC, pack voltage, motor RPM, etc., **fetch the community-known PIDs and validate them on this car**. If they work, we save many Techstream sessions; if they don't, we know we have a divergence to investigate.
+2. **Cross-reference the Solterra Forum PID threads early.** Before doing blind discovery on basic signals like SoC, pack voltage, motor RPM, etc., fetch the community-known PIDs and validate them on the test vehicle. Confirmed-working PIDs save many Techstream sessions; divergences flag things worth investigating.
 
-3. **Use the RAV4 Prime XGauge config as a cross-check.** The Solterra forum thread suggests the 2021 RAV4 Prime XGauge mostly works on Solterra — confirms the inheritance from RAV4 Prime's Toyota Hybrid System architecture and gives us a known-good signal map to compare to our reverse-engineered findings.
+3. **Use the RAV4 Prime XGauge config as a cross-check.** The Solterra forum thread suggests the 2021 RAV4 Prime XGauge mostly works on Solterra — confirms the inheritance from RAV4 Prime's Toyota Hybrid System architecture and provides a known-good signal map to compare reverse-engineered findings against.
 
 4. **Don't bother with SecOC for now.** Active control commands (lock/unlock, climate control) are SecOC-gated and aren't crackable on this generation. Stick to read-only diagnostic reads via UDS over OBD-II — that's where all the value is and it's not security-restricted.
 
-5. **Verify Techstream version is 18.00.008.** Earlier 18.x will have incomplete bZ4X coverage. Quick check in Techstream → Help → About.
+5. **Verify Techstream version is 18.00.008.** Earlier 18.x has incomplete bZ4X coverage. Quick check in Techstream → Help → About.
 
-## 7. Bottom line for the user
+## 7. Summary
 
 - Stay on **Techstream 18.00.008**; verify the install. No newer "official" version exists.
-- Accept that **bZ4X/Solterra reprogramming, key writing, and SecOC-gated bidirectional features are off-limits** without GTS+ or a dealer.
+- **bZ4X/Solterra reprogramming, key writing, and SecOC-gated bidirectional features are off-limits** without GTS+ or a dealer.
 - For Subaru-specific modules add **SSM4**.
 - For deeper CAN-bus reverse engineering, the live action is on the **[Solterra Forum PID threads](https://www.solterraforum.com/threads/pids-obd-commands.1172/)** and the comma Discord, not in any Techstream-derived export.
-- **Highest-leverage next step:** spend one session pulling the published RAV4 Prime XGauge / Solterra-Forum PID list, then validating each PID against this car (passively first, since Techstream's session may still be active) — much faster than blind Data-List-isolation for already-known signals.
+- **Highest-leverage next step:** pull the published RAV4 Prime XGauge / Solterra-Forum PID list and validate each PID against the test vehicle (passively first, since a Techstream session may still be active) — much faster than blind Data-List-isolation for already-known signals.
 
 ## Sources
 

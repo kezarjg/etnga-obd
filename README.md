@@ -11,6 +11,24 @@ EVNotify, custom dashboards) or doing their own RE. It documents the OBD-II
 diagnostic surface (UDS over ISO-TP) plus the small handful of broadcast CAN
 frames visible on the OBD-II bus.
 
+## Status
+
+Active reverse-engineering project. Coverage as of 2026-05-10:
+
+- **~36 of 39 ECUs mapped** — 14 directly addressable on OBD-II plus 22 sub-targets behind the gateway at `0x750`. Three top-level OBD-II IDs in the standardized range remain unidentified.
+- **~12 high-priority telemetry signals decoded with verification** — pack SOC/voltage/current, per-cell voltages (×96), per-sensor cell temperatures (×24), 12V auxiliary battery, vehicle speed, gear, odometer, TPMS pressures/temps/corner mapping, and others.
+- Charging-state machines, dynamic-DID composition (`0x2C 01`), and gateway mixed-addressing all decoded.
+- SOH / pack capacity / range-to-empty are confirmed *not* exposed as DIDs anywhere on the diagnostic surface — they must be derived externally or read from broadcast frames during driving.
+
+## Where to start
+
+- **OBD/UDS basics on this platform**: `docs/obd-and-uds-primer.md`
+- **ECU inventory** (top-level IDs and gateway sub-targets): `ecus/README.md`
+- **Gateway addressing scheme** (mixed-addressing format, sub-target list): `messages/0x750.md`
+- **Decoded battery signals** (SOC, voltages, temps): `ecus/ev-battery.md`
+- **Decoded vehicle-supervisor signals** (speed, gear, 12V health, motors): `ecus/ev.md`
+- **TPMS** (pressures, temps, slot-vs-corner): `ecus/tpms.md`
+
 ## What's here
 
 - **`ecus/`** — per-ECU surface maps. For each addressable ECU on the OBD-II
@@ -56,7 +74,7 @@ relays.
   [`Toyota-bZ4X`](https://github.com/OBDb/Toyota-bZ4X) and
   [`Subaru-Solterra`](https://github.com/OBDb/Subaru-Solterra). This repo
   goes broader (broadcast frames, gateway relays, derivation methodology)
-  than OBDb's schema can model; we plan to upstream the subset that fits.
+  than OBDb's schema can model; the subset that fits will be upstreamed.
 - **[`optskug/docs`](https://github.com/optskug/docs)** — SecOC/TSK key
   extraction for eTNGA ADAS. Complement to this repo's diagnostic-bus
   scope.
@@ -90,3 +108,7 @@ Decoded PIDs, formulas, and ECU maps may be reused freely with attribution.
 ## Contributing
 
 PRs welcome. See `CONTRIBUTING.md`.
+
+---
+
+Last updated: 2026-05-10.
