@@ -1,7 +1,7 @@
 ---
 name: Plug-in Charge Control / OBC + DC-DC Converter (Toyota EM "A33")
-diagnostic_request_id: 0x745
-diagnostic_response_id: 0x74D
+diagnostic_request_id: "0x745"
+diagnostic_response_id: "0x74D"
 toyota_name: Plug-in Charge Control
 em_reference: A33 (Electric Converter Unit — OBC + DC-DC)
 isotp: standard

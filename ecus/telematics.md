@@ -1,8 +1,8 @@
 ---
 name: Telematics (Data Communication Module / DCM)
-diagnostic_request_id: 0x750
-diagnostic_response_id: 0x758
-gateway_sub_target: 0xC7
+diagnostic_request_id: "0x750"
+diagnostic_response_id: "0x758"
+gateway_sub_target: "0xC7"
 isotp: mixed-addressing
 sessions_observed:
   - default                # 0x01

@@ -1,7 +1,7 @@
 ---
 name: SRS Airbag ECU (Supplemental Restraint System)
-diagnostic_request_id: 0x780
-diagnostic_response_id: 0x788
+diagnostic_request_id: "0x780"
+diagnostic_response_id: "0x788"
 isotp: standard
 sessions_observed:
   - default                # 0x01

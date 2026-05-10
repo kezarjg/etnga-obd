@@ -1,7 +1,7 @@
 ---
 name: "EV ECU (Toyota official: Hybrid Vehicle Control ECU, F45)"
-diagnostic_request_id: 0x7D2
-diagnostic_response_id: 0x7DA
+diagnostic_request_id: "0x7D2"
+diagnostic_response_id: "0x7DA"
 toyota_name: Hybrid Vehicle Control ECU
 em_reference: F45
 physical_bus: P-CAN-FD          # per EM39J0U/system/MPX_P_*.pdf

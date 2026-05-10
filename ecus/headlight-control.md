@@ -1,8 +1,8 @@
 ---
 name: Headlight Control
-diagnostic_request_id: 0x750
-diagnostic_response_id: 0x758
-gateway_sub_target: 0x70
+diagnostic_request_id: "0x750"
+diagnostic_response_id: "0x758"
+gateway_sub_target: "0x70"
 isotp: mixed-addressing
 sessions_observed:
   - default                # 0x01

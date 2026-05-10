@@ -1,8 +1,8 @@
 ---
 name: Main Body ECU (Toyota EM "F8 Main Body ECU")
-diagnostic_request_id: 0x750
-diagnostic_response_id: 0x758
-gateway_sub_target: 0x40
+diagnostic_request_id: "0x750"
+diagnostic_response_id: "0x758"
+gateway_sub_target: "0x40"
 em_reference: F8 Main Body ECU
 physical_bus: B-CAN
 isotp: mixed-addressing

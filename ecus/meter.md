@@ -1,7 +1,7 @@
 ---
 name: Combination Meter (Instrument Cluster)
-diagnostic_request_id: 0x7C0
-diagnostic_response_id: 0x7C8
+diagnostic_request_id: "0x7C0"
+diagnostic_response_id: "0x7C8"
 isotp: standard
 sessions_observed:
   - default

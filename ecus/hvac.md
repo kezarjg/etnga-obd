@@ -1,7 +1,7 @@
 ---
 name: HVAC / Air Conditioner (Toyota EM "F28 Air Conditioning Amplifier Assembly")
-diagnostic_request_id: 0x7C4
-diagnostic_response_id: 0x7CC
+diagnostic_request_id: "0x7C4"
+diagnostic_response_id: "0x7CC"
 toyota_name: Air Conditioner
 em_reference: F28 Air Conditioning Amplifier Assembly
 physical_bus: B-CAN

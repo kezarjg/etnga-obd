@@ -1,8 +1,8 @@
 ---
 name: Power Source Control
-diagnostic_request_id: 0x750
-diagnostic_response_id: 0x758
-gateway_sub_target: 0xE9
+diagnostic_request_id: "0x750"
+diagnostic_response_id: "0x758"
+gateway_sub_target: "0xE9"
 isotp: mixed-addressing
 sessions_observed:
   - default

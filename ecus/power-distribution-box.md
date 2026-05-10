@@ -1,8 +1,8 @@
 ---
 name: Power Distribution Box
-diagnostic_request_id: 0x750
-diagnostic_response_id: 0x758
-gateway_sub_target: 0x4D
+diagnostic_request_id: "0x750"
+diagnostic_response_id: "0x758"
+gateway_sub_target: "0x4D"
 em_reference: F143/F144 (per EM, in passenger kick panel area)
 isotp: mixed-addressing
 sessions_observed:

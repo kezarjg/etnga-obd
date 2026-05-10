@@ -1,8 +1,8 @@
 ---
 name: Tire Pressure Monitor ECU (TPMS)
-diagnostic_gateway_request_id: 0x750
-diagnostic_gateway_response_id: 0x758
-diagnostic_subtarget: 0x2A         # mixed-addressing prefix byte for this ECU
+diagnostic_gateway_request_id: "0x750"
+diagnostic_gateway_response_id: "0x758"
+diagnostic_subtarget: "0x2A"         # mixed-addressing prefix byte for this ECU
 isotp: mixed-addressing            # ISO 15765-2 mixed addressing (1 address-extension byte + standard ISO-TP)
 sessions_observed:
   - default                        # 0x01

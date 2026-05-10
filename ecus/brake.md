@@ -1,10 +1,10 @@
 ---
 name: Brake System (Brake/EPB ECU + Brake Booster Actuator)
-diagnostic_request_id_main: 0x7B0
-diagnostic_response_id_main: 0x7B8
-diagnostic_request_id_booster: 0x750
-diagnostic_response_id_booster: 0x758
-booster_gateway_sub_target: 0x29
+diagnostic_request_id_main: "0x7B0"
+diagnostic_response_id_main: "0x7B8"
+diagnostic_request_id_booster: "0x750"
+diagnostic_response_id_booster: "0x758"
+booster_gateway_sub_target: "0x29"
 isotp: standard for 0x7B0; mixed-addressing for 0x750/0x29
 sessions_observed:
   - default                # 0x01

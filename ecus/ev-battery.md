@@ -1,7 +1,7 @@
 ---
 name: "EV Battery ECU (Toyota official: Battery ECU, k3)"
-diagnostic_request_id: 0x747
-diagnostic_response_id: 0x74F
+diagnostic_request_id: "0x747"
+diagnostic_response_id: "0x74F"
 toyota_name: Battery ECU
 em_reference: k3
 physical_bus: P-CAN-FD          # per EM39J0U/system/MPX_P_*.pdf

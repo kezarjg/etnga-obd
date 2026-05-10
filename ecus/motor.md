@@ -1,9 +1,9 @@
 ---
 name: Motor Generator ECUs (Front + Rear inverters)
-diagnostic_request_id_front: 0x724
-diagnostic_response_id_front: 0x72C
-diagnostic_request_id_rear: 0x705
-diagnostic_response_id_rear: 0x70D
+diagnostic_request_id_front: "0x724"
+diagnostic_response_id_front: "0x72C"
+diagnostic_request_id_rear: "0x705"
+diagnostic_response_id_rear: "0x70D"
 toyota_name_front: Motor Generator
 toyota_name_rear: Rear Motor Generator
 em_reference_front: D9 Front EV Motor Control Inverter
